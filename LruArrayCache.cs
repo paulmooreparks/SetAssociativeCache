@@ -44,7 +44,7 @@ namespace ParksComputing.SetAssociativeCache {
                 ++setOffset;
             }
 
-            RotateSetOffsets(set, setOffset);
+            RotateSet(set, setOffset);
             itemArray[itemIndex] = KeyValuePair.Create(key, value);
             return;
         }

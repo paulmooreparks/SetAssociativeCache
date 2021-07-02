@@ -20,7 +20,8 @@ namespace SetAssociativeCacheTests {
             cache1.Add(38, 9);
             cache1.Add(34, 123);
             Assert.IsTrue(cache1.ContainsKey(38));
-            Assert.IsTrue(cache1.ContainsKey(39));
+            Assert.IsTrue(cache1.ContainsKey(34));
+            Assert.IsFalse(cache1.ContainsKey(88));
         }
     }
 }

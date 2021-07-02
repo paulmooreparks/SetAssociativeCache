@@ -127,7 +127,7 @@ namespace ParksComputing.SetAssociativeCache {
             return itemIndex;
         }
 
-        protected int RotateSetOffsets(int set, int offset) {
+        protected int RotateSet(int set, int offset) {
             int retVal = int.MaxValue;
             int setStart = set * Ways;
             int headItem = offsetArray[setStart + offset];
@@ -139,7 +139,25 @@ namespace ParksComputing.SetAssociativeCache {
         }
 
         public bool ContainsKey(TKey key) {
-            return FindItemIndex(key) == int.MaxValue;
+            var set = FindSet(key);
+            var setBegin = set * Ways;
+            var offsetIndex = setBegin;
+            var itemIndex = int.MaxValue;
+            int setOffset = 0;
+
+            while (setOffset < Ways) {
+                offsetIndex = setBegin + setOffset;
+                itemIndex = offsetArray[offsetIndex];
+
+                if (itemIndex != int.MaxValue && itemArray[itemIndex].Key.Equals(key)) {
+                    RotateSet(set, setOffset);
+                    return true;
+                }
+
+                ++setOffset;
+            }
+
+            return false;
         }
 
         public bool TryGetValue(TKey key, [MaybeNullWhen(false)] out TValue value) {
