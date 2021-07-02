@@ -16,11 +16,29 @@ namespace ParksComputing.SetAssociativeCache {
     class LfuArrayCacheImpl<TKey, TValue> : ArrayCacheImplBase<TKey, TValue> {
 
         public LfuArrayCacheImpl(int sets, int ways) : base(sets, ways) {
-            indexArray = new int[Capacity];
-            Array.Fill(indexArray, int.MaxValue);
+            indexArray = new KeyValuePair<int, int>[Capacity];
+            Array.Fill(indexArray, KeyValuePair.Create(int.MaxValue, 0));
         }
 
-        protected int[] indexArray;
+        /* Key is index into ItemArray; Value is usage count. */
+        protected KeyValuePair<int, int>[] indexArray;
+
+        public class LruComparer : Comparer<KeyValuePair<int,int>> {
+            // Compares by Length, Height, and Width.
+            public override int Compare(KeyValuePair<int, int> x, KeyValuePair<int, int> y) {
+                if (x.Value > y.Value) {
+                    return 1;
+                }
+                else if (x.Value < y.Value) {
+                    return -1;
+                }
+                else {
+                    return 0;
+                }
+            }
+        }
+
+        IComparer<KeyValuePair<int, int>> lruComparer = new LruComparer();
 
         override public void Add(TKey key, TValue value) {
             var set = FindSet(key);
@@ -30,17 +48,17 @@ namespace ParksComputing.SetAssociativeCache {
             int itemIndex;
 
             for (setOffset = 0, offsetIndex = setBegin; setOffset < Ways; ++setOffset, ++offsetIndex) {
-                itemIndex = indexArray[offsetIndex];
+                itemIndex = indexArray[offsetIndex].Key;
 
                 if (itemIndex == int.MaxValue) {
                     itemIndex = offsetIndex;
-                    indexArray[offsetIndex] = itemIndex;
+                    indexArray[offsetIndex] = KeyValuePair.Create(itemIndex, indexArray[offsetIndex].Value);
                     Add(key, value, set, setOffset, itemIndex);
                     return;
                 }
 
                 if (ItemArray[itemIndex].Key.Equals(key)) {
-                    itemIndex = indexArray[offsetIndex];
+                    itemIndex = indexArray[offsetIndex].Key;
                     Add(key, value, set, setOffset, itemIndex);
                     return;
                 }
@@ -50,7 +68,7 @@ namespace ParksComputing.SetAssociativeCache {
             least-recently used, then rotate it to the front. */
             setOffset = Ways - 1;
             offsetIndex = setBegin + setOffset;
-            itemIndex = indexArray[offsetIndex];
+            itemIndex = indexArray[offsetIndex].Key;
             Add(key, value, set, setOffset, itemIndex);
             return;
         }
@@ -59,8 +77,8 @@ namespace ParksComputing.SetAssociativeCache {
             get {
                 int value = 0;
 
-                foreach (int itemIndex in indexArray) {
-                    if (itemIndex != int.MaxValue) {
+                foreach (KeyValuePair<int, int> itemIndex in indexArray) {
+                    if (itemIndex.Key != int.MaxValue) {
                         ++value;
                     }
                 }
@@ -74,7 +92,7 @@ namespace ParksComputing.SetAssociativeCache {
             var setBegin = set * Ways;
 
             for (int setOffset = 0, offsetIndex = setBegin; setOffset < Ways; ++setOffset, ++offsetIndex) {
-                int itemIndex = indexArray[offsetIndex];
+                int itemIndex = indexArray[offsetIndex].Key;
 
                 if (itemIndex != int.MaxValue &&
                     ItemArray[itemIndex].Key.Equals(key)) {
@@ -91,7 +109,7 @@ namespace ParksComputing.SetAssociativeCache {
             var setBegin = set * Ways;
 
             for (int setOffset = 0, offsetIndex = setBegin; setOffset < Ways; ++setOffset, ++offsetIndex) {
-                int itemIndex = indexArray[offsetIndex];
+                int itemIndex = indexArray[offsetIndex].Key;
 
                 if (itemIndex != int.MaxValue &&
                     ItemArray[itemIndex].Key.Equals(item.Key) &&
@@ -109,7 +127,7 @@ namespace ParksComputing.SetAssociativeCache {
             var setBegin = set * Ways;
 
             for (int setOffset = 0, offsetIndex = setBegin; setOffset < Ways; ++setOffset, ++offsetIndex) {
-                int itemIndex = indexArray[offsetIndex];
+                int itemIndex = indexArray[offsetIndex].Key;
 
                 if (itemIndex != int.MaxValue && ItemArray[itemIndex].Key.Equals(key)) {
                     UpdateSet(set, setOffset);
@@ -127,14 +145,14 @@ namespace ParksComputing.SetAssociativeCache {
             var setBegin = set * Ways;
 
             for (int setOffset = 0, offsetIndex = setBegin; setOffset < Ways; ++setOffset, ++offsetIndex) {
-                int itemIndex = indexArray[offsetIndex];
+                int itemIndex = indexArray[offsetIndex].Key;
 
                 if (itemIndex != int.MaxValue && ItemArray[itemIndex].Key.Equals(key)) {
                     /* Since all access to the cache values goes through the index array first, 
                     I'll try leaving the value in the cache and see how that goes. It's faster, 
                     but for some reason it make me nervous. I suppose I could make value replacement 
                     a feature of the policy class. */
-                    indexArray[offsetIndex] = int.MaxValue;
+                    indexArray[offsetIndex] = KeyValuePair.Create(itemIndex, indexArray[offsetIndex].Value);
                     UpdateSet(set, setOffset);
                     return true;
                 }
@@ -148,7 +166,7 @@ namespace ParksComputing.SetAssociativeCache {
             var setBegin = set * Ways;
 
             for (int setOffset = 0, offsetIndex = setBegin; setOffset < Ways; ++setOffset, ++offsetIndex) {
-                int itemIndex = indexArray[offsetIndex];
+                int itemIndex = indexArray[offsetIndex].Key;
 
                 if (itemIndex != int.MaxValue &&
                     ItemArray[itemIndex].Key.Equals(item.Key) &&
@@ -157,7 +175,7 @@ namespace ParksComputing.SetAssociativeCache {
                     I'll try leaving the value in the cache and see how that goes. It's faster, 
                     but for some reason it make me nervous. I suppose I could make value replacement 
                     a feature of the policy class. */
-                    indexArray[offsetIndex] = int.MaxValue;
+                    indexArray[offsetIndex] = KeyValuePair.Create(itemIndex, indexArray[offsetIndex].Value);
                     UpdateSet(set, setOffset);
                     return true;
                 }
@@ -170,9 +188,9 @@ namespace ParksComputing.SetAssociativeCache {
             get {
                 List<TKey> value = new();
 
-                foreach (int itemIndex in indexArray) {
-                    if (itemIndex != int.MaxValue) {
-                        value.Add(ItemArray[itemIndex].Key);
+                foreach (KeyValuePair<int, int> itemIndex in indexArray) {
+                    if (itemIndex.Key != int.MaxValue) {
+                        value.Add(ItemArray[itemIndex.Key].Key);
                     }
                 }
 
@@ -183,9 +201,9 @@ namespace ParksComputing.SetAssociativeCache {
             get {
                 List<TValue> value = new();
 
-                foreach (int itemIndex in indexArray) {
-                    if (itemIndex != int.MaxValue) {
-                        value.Add(ItemArray[itemIndex].Value);
+                foreach (KeyValuePair<int, int> itemIndex in indexArray) {
+                    if (itemIndex.Key != int.MaxValue) {
+                        value.Add(ItemArray[itemIndex.Key].Value);
                     }
                 }
 
@@ -194,9 +212,9 @@ namespace ParksComputing.SetAssociativeCache {
         }
 
         public override void CopyTo(KeyValuePair<TKey, TValue>[] array, int arrayIndex) {
-            foreach (int itemIndex in indexArray) {
-                if (itemIndex != int.MaxValue) {
-                    array[arrayIndex] = ItemArray[itemIndex];
+            foreach (KeyValuePair<int,int> itemIndex in indexArray) {
+                if (itemIndex.Key != int.MaxValue) {
+                    array[arrayIndex] = ItemArray[itemIndex.Key];
                     ++arrayIndex;
                 }
             }
@@ -212,15 +230,9 @@ namespace ParksComputing.SetAssociativeCache {
             throw new NotImplementedException();
         }
 
-        protected int UpdateSet(int set, int offset) {
-            int retVal = int.MaxValue;
+        protected void UpdateSet(int set, int offset) {
             int setStart = set * Ways;
-            int headItem = indexArray[setStart + offset];
-
-            System.Array.Copy(indexArray, setStart, indexArray, setStart + 1, offset);
-            indexArray[setStart] = headItem;
-
-            return retVal;
+            Array.Sort(indexArray, setStart, Ways, lruComparer);
         }
 
         protected void Add(TKey key, TValue value, int set, int setOffset, int itemIndex) {

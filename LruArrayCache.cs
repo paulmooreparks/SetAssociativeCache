@@ -46,7 +46,7 @@ namespace ParksComputing.SetAssociativeCache {
                 }
             }
 
-            /* If we get here, then the set is full. We'll evict the last item in the set, which is the 
+            /* If we get here, then the set is full. We'll replace the last item in the set, which is the 
             least-recently used, then rotate it to the front. */
             setOffset = Ways - 1;
             offsetIndex = setBegin + setOffset;
@@ -212,15 +212,12 @@ namespace ParksComputing.SetAssociativeCache {
             throw new NotImplementedException();
         }
 
-        protected int UpdateSet(int set, int offset) {
-            int retVal = int.MaxValue;
+        protected void UpdateSet(int set, int offset) {
             int setStart = set * Ways;
             int headItem = indexArray[setStart + offset];
 
             System.Array.Copy(indexArray, setStart, indexArray, setStart + 1, offset);
             indexArray[setStart] = headItem;
-
-            return retVal;
         }
 
         protected void Add(TKey key, TValue value, int set, int setOffset, int itemIndex) {
