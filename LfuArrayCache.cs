@@ -19,33 +19,36 @@ namespace ParksComputing.SetAssociativeCache {
         }
 
         override public void Add(TKey key, TValue value) {
+            /* This is still the LRU algorithm. I need to replace this with the LFU version. */
             var set = FindSet(key);
             var setBegin = set * Ways;
-            var offsetIndex = setBegin;
-            var itemIndex = int.MaxValue;
-            int setOffset = 0;
+            int setOffset;
+            int offsetIndex;
+            int itemIndex;
 
-            while (setOffset < Ways) {
-                offsetIndex = setBegin + setOffset;
+            for (setOffset = 0, offsetIndex = setBegin; setOffset < Ways; ++setOffset, ++offsetIndex) {
                 itemIndex = indexArray[offsetIndex];
 
                 if (itemIndex == int.MaxValue) {
                     itemIndex = offsetIndex;
                     indexArray[offsetIndex] = itemIndex;
-                    break;
+                    Add(key, value, set, setOffset, itemIndex);
+                    return;
                 }
 
                 if (itemArray[itemIndex].Key.Equals(key)) {
-                    offsetIndex = setBegin + setOffset;
                     itemIndex = indexArray[offsetIndex];
-                    break;
+                    Add(key, value, set, setOffset, itemIndex);
+                    return;
                 }
-
-                ++setOffset;
             }
 
-            RotateSet(set, setOffset);
-            itemArray[itemIndex] = KeyValuePair.Create(key, value);
+            /* If we get here, then the set is full. We'll evict the last item in the set, which is the 
+            least-recently used, then rotate it to the front. */
+            setOffset = Ways - 1;
+            offsetIndex = setBegin + setOffset;
+            itemIndex = indexArray[offsetIndex];
+            Add(key, value, set, setOffset, itemIndex);
             return;
         }
 

@@ -62,7 +62,8 @@ namespace ParksComputing.SetAssociativeCache {
             for (int setOffset = 0, offsetIndex = setBegin; setOffset < Ways; ++setOffset, ++offsetIndex) {
                 int itemIndex = indexArray[offsetIndex];
 
-                if (itemIndex != int.MaxValue && itemArray[itemIndex].Key.Equals(key)) {
+                if (itemIndex != int.MaxValue && 
+                    itemArray[itemIndex].Key.Equals(key)) {
                     RotateSet(set, setOffset);
                     return true;
                 }
@@ -148,6 +149,11 @@ namespace ParksComputing.SetAssociativeCache {
             indexArray[setStart] = headItem;
 
             return retVal;
+        }
+
+        protected void Add(TKey key, TValue value, int set, int setOffset, int itemIndex) {
+            itemArray[itemIndex] = KeyValuePair.Create(key, value);
+            RotateSet(set, setOffset);
         }
 
     }
