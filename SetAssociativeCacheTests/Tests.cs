@@ -18,7 +18,9 @@ namespace SetAssociativeCacheTests {
         public void Test2() {
             var cache1 = new SetAssociativeCache<int, int, LruArrayCache>(4, 4);
             cache1.Add(38, 9);
+            Assert.IsTrue(cache1.Count == 1);
             cache1.Add(34, 123);
+            Assert.IsTrue(cache1.Count == 2);
             Assert.IsTrue(cache1.ContainsKey(38));
             Assert.IsTrue(cache1.ContainsKey(34));
             Assert.IsFalse(cache1.ContainsKey(88));

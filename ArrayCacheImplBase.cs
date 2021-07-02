@@ -9,14 +9,15 @@ namespace ParksComputing.SetAssociativeCache {
         public ArrayCacheImplBase(int sets, int ways) {
             Sets = sets;
             Ways = ways;
-            Capacity = Sets * Ways;
             itemArray = new KeyValuePair<TKey, TValue>[Capacity];
-            offsetArray = new int[Capacity];
-            Array.Fill(offsetArray, int.MaxValue);
+            indexArray = new int[Capacity];
+            Array.Fill(indexArray, int.MaxValue);
         }
 
         protected KeyValuePair<TKey, TValue>[] itemArray;
-        protected int[] offsetArray;
+        protected int[] indexArray;
+        public int Sets { get; protected set; }
+        public int Ways { get; protected set; }
 
         public TValue this[TKey key] {
             get {
@@ -32,14 +33,21 @@ namespace ParksComputing.SetAssociativeCache {
             }
         }
 
-        public int Sets { get; protected set; }
-        public int Ways { get; protected set; }
-        public int Capacity { get; protected set; }
+        public int Capacity { get => Sets * Ways; }
 
-        public ICollection<TKey> Keys { get; }
-        public ICollection<TValue> Values { get; }
-        public int Count { get; protected set; }
-        public bool IsReadOnly { get; }
+        public int Count {
+            get {
+                int value = 0;
+
+                foreach (int itemIndex in indexArray) {
+                    if (itemIndex != int.MaxValue) {
+                        ++value;
+                    }
+                }
+
+                return value;
+            }
+        }
 
         public abstract void Add(TKey key, TValue value);
 
@@ -47,138 +55,56 @@ namespace ParksComputing.SetAssociativeCache {
             Add(item.Key, item.Value);
         }
 
-        public void Clear() {
-            throw new NotImplementedException();
-        }
-
-        public bool Contains(KeyValuePair<TKey, TValue> item) {
-            throw new NotImplementedException();
-        }
-
-        protected int FindSet(TKey key) {
-            return key.GetHashCode() % Sets;
-        }
-
-        protected int FindOffsetIndex(TKey key) {
-            var offsetIndexBegin = FindSet(key);
-            var offsetIndex = offsetIndexBegin;
-
-            for (int i = 0; i < Ways; ++i) {
-                var itemIndex = offsetArray[offsetIndex];
-
-                if (itemIndex == int.MaxValue) {
-                    return offsetIndex;
-                }
-
-                if (itemArray[itemIndex].Key.Equals(key)) {
-                    return offsetIndex;
-                }
-
-                ++offsetIndex;
-            }
-
-            return int.MaxValue;
-        }
-
-        protected int FindItemIndex(TKey key) {
-            var offsetIndexBegin = FindOffsetIndex(key);
-            var offsetIndex = offsetIndexBegin;
-
-            for (int i = 0; i < Ways; ++i) {
-                var itemIndex = offsetArray[offsetIndex];
-
-                if (itemIndex == int.MaxValue) {
-                    // itemIndex is same as offsetIndex when the set is not full
-                    // offsetArray[offsetIndex] = offsetIndex;
-                    return offsetIndex; 
-                }
-
-                ++offsetIndex;
-            }
-
-            return int.MaxValue;
-        }
-
-        protected int FindAndTouchItemIndex(TKey key) {
-            var itemIndex = FindItemIndex(key);
-
-            if (itemIndex != int.MaxValue) {
-                var offset = itemIndex % Ways;
-                var setUsageIndexBegin = itemIndex - offset;
-                var setUsageIndex = setUsageIndexBegin;
-
-                for (int i = 0; i < Ways; ++i) {
-                    if (offsetArray[setUsageIndex] == itemIndex) {
-                        var touchIndex = offsetArray[setUsageIndex];
-                        System.Array.Copy(offsetArray, setUsageIndexBegin, offsetArray, setUsageIndexBegin + 1, Ways - 1);
-                        offsetArray[setUsageIndexBegin] = touchIndex;
-                        break;
-                    }
-
-                    ++setUsageIndex;
-                }
-
-            }
-            else {
-                var offsetIndexBegin = FindSet(key);
-                offsetArray[offsetIndexBegin] = itemIndex;
-            }
-
-            return itemIndex;
-        }
-
-        protected int RotateSet(int set, int offset) {
-            int retVal = int.MaxValue;
-            int setStart = set * Ways;
-            int headItem = offsetArray[setStart + offset];
-
-            System.Array.Copy(offsetArray, setStart, offsetArray, setStart + 1, offset);
-            offsetArray[setStart] = headItem;
-
-            return retVal;
-        }
-
         public bool ContainsKey(TKey key) {
             var set = FindSet(key);
             var setBegin = set * Ways;
-            var offsetIndex = setBegin;
-            var itemIndex = int.MaxValue;
-            int setOffset = 0;
-
-            while (setOffset < Ways) {
-                offsetIndex = setBegin + setOffset;
-                itemIndex = offsetArray[offsetIndex];
+            
+            for (int setOffset = 0, offsetIndex = setBegin; setOffset < Ways; ++setOffset, ++offsetIndex) {
+                int itemIndex = indexArray[offsetIndex];
 
                 if (itemIndex != int.MaxValue && itemArray[itemIndex].Key.Equals(key)) {
                     RotateSet(set, setOffset);
                     return true;
                 }
+            }
 
-                ++setOffset;
+            return false;
+        }
+
+        public bool Contains(KeyValuePair<TKey, TValue> item) {
+            var set = FindSet(item.Key);
+            var setBegin = set * Ways;
+
+            for (int setOffset = 0, offsetIndex = setBegin; setOffset < Ways; ++setOffset, ++offsetIndex) {
+                int itemIndex = indexArray[offsetIndex];
+
+                if (itemIndex != int.MaxValue && 
+                    itemArray[itemIndex].Key.Equals(item.Key) &&
+                    itemArray[itemIndex].Value.Equals(item.Value)) {
+                    RotateSet(set, setOffset);
+                    return true;
+                }
             }
 
             return false;
         }
 
         public bool TryGetValue(TKey key, [MaybeNullWhen(false)] out TValue value) {
-            var index = FindAndTouchItemIndex(key);
+            var set = FindSet(key);
+            var setBegin = set * Ways;
 
-            if (index != int.MaxValue) {
-                var pair = itemArray[index];
-                value = pair.Value;
-                return true;
+            for (int setOffset = 0, offsetIndex = setBegin; setOffset < Ways; ++setOffset, ++offsetIndex) {
+                int itemIndex = indexArray[offsetIndex];
+
+                if (itemIndex != int.MaxValue && itemArray[itemIndex].Key.Equals(key)) {
+                    RotateSet(set, setOffset);
+                    value = itemArray[itemIndex].Value;
+                    return true;
+                }
             }
 
             value = default(TValue);
             return false;
-        }
-
-        public void CopyTo(KeyValuePair<TKey, TValue>[] array, int arrayIndex) {
-            throw new NotImplementedException();
-        }
-
-        public IEnumerator<KeyValuePair<TKey, TValue>> GetEnumerator() {
-            throw new NotImplementedException();
         }
 
         public bool Remove(TKey key) {
@@ -189,8 +115,40 @@ namespace ParksComputing.SetAssociativeCache {
             throw new NotImplementedException();
         }
 
+        public void Clear() {
+            throw new NotImplementedException();
+        }
+
+        public ICollection<TKey> Keys { get; }
+        public ICollection<TValue> Values { get; }
+        public bool IsReadOnly { get; }
+
+        public void CopyTo(KeyValuePair<TKey, TValue>[] array, int arrayIndex) {
+            throw new NotImplementedException();
+        }
+
+        public IEnumerator<KeyValuePair<TKey, TValue>> GetEnumerator() {
+            throw new NotImplementedException();
+        }
+
         IEnumerator IEnumerable.GetEnumerator() {
             throw new NotImplementedException();
         }
+
+        protected int FindSet(TKey key) {
+            return key.GetHashCode() % Sets;
+        }
+
+        protected int RotateSet(int set, int offset) {
+            int retVal = int.MaxValue;
+            int setStart = set * Ways;
+            int headItem = indexArray[setStart + offset];
+
+            System.Array.Copy(indexArray, setStart, indexArray, setStart + 1, offset);
+            indexArray[setStart] = headItem;
+
+            return retVal;
+        }
+
     }
 }

@@ -19,9 +19,34 @@ namespace ParksComputing.SetAssociativeCache {
         }
 
         override public void Add(TKey key, TValue value) {
-            var offsetIndex = FindOffsetIndex(key);
-            var itemIndex = offsetArray[offsetIndex];
+            var set = FindSet(key);
+            var setBegin = set * Ways;
+            var offsetIndex = setBegin;
+            var itemIndex = int.MaxValue;
+            int setOffset = 0;
+
+            while (setOffset < Ways) {
+                offsetIndex = setBegin + setOffset;
+                itemIndex = indexArray[offsetIndex];
+
+                if (itemIndex == int.MaxValue) {
+                    itemIndex = offsetIndex;
+                    indexArray[offsetIndex] = itemIndex;
+                    break;
+                }
+
+                if (itemArray[itemIndex].Key.Equals(key)) {
+                    offsetIndex = setBegin + setOffset;
+                    itemIndex = indexArray[offsetIndex];
+                    break;
+                }
+
+                ++setOffset;
+            }
+
+            RotateSet(set, setOffset);
             itemArray[itemIndex] = KeyValuePair.Create(key, value);
+            return;
         }
 
     }

@@ -27,17 +27,17 @@ namespace ParksComputing.SetAssociativeCache {
 
             while (setOffset < Ways) {
                 offsetIndex = setBegin + setOffset;
-                itemIndex = offsetArray[offsetIndex];
+                itemIndex = indexArray[offsetIndex];
 
                 if (itemIndex == int.MaxValue) {
                     itemIndex = offsetIndex;
-                    offsetArray[offsetIndex] = itemIndex;
+                    indexArray[offsetIndex] = itemIndex;
                     break;
                 }
 
                 if (itemArray[itemIndex].Key.Equals(key)) {
                     offsetIndex = setBegin + setOffset;
-                    itemIndex = offsetArray[offsetIndex];
+                    itemIndex = indexArray[offsetIndex];
                     break;
                 }
 
