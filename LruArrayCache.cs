@@ -14,13 +14,12 @@ namespace ParksComputing.SetAssociativeCache {
     }
 
     class LruArrayCacheImpl<TKey, TValue> : ArrayCacheImplBase<TKey, TValue> {
+        /* Array of indices into ItemArray, split into sets, where each set is sorted from MRU to LRU. */
+        protected int[] indexArray;
 
         public LruArrayCacheImpl(int sets, int ways) : base(sets, ways) {
-            indexArray = new int[Capacity];
-            Array.Fill(indexArray, int.MaxValue);
+            Clear();
         }
-
-        protected int[] indexArray;
 
         override public void Add(TKey key, TValue value) {
             var set = FindSet(key);
@@ -202,39 +201,39 @@ namespace ParksComputing.SetAssociativeCache {
             }
         }
 
-        public override IEnumerator<KeyValuePair<TKey, TValue>> GetEnumerator() {
-            throw new NotImplementedException();
-        }
-
-        public override bool IsReadOnly { get => false; }
-
         public override void Clear() {
-            throw new NotImplementedException();
+            /* Keep in mind that the data aren't cleared. We are clearing the indices which point 
+            to the data. With no indices, the data aren't accessible. */
+            indexArray = new int[Capacity];
+            Array.Fill(indexArray, int.MaxValue);
         }
 
-        protected void PromoteKey(int set, int offset) {
-            int setStart = set * Ways;
-            int keyIndex = setStart + offset;
-            int newHeadItem = indexArray[keyIndex];
-
-            System.Array.Copy(indexArray, setStart, indexArray, setStart + 1, offset);
-            indexArray[setStart] = newHeadItem;
-        }
-
-        protected void DemoteKey(int set, int offset) {
-            int setStart = set * Ways;
-            int keyIndex = setStart + offset;
-            int count = Ways - 1 - offset;
-            int tailIndex = setStart + Ways - 1;
-            int newTailItem = indexArray[keyIndex];
-
-            System.Array.Copy(indexArray, keyIndex + 1, indexArray, keyIndex, count);
-            indexArray[tailIndex] = newTailItem;
-        }
 
         protected void Add(TKey key, TValue value, int set, int setOffset, int itemIndex) {
             ItemArray[itemIndex] = KeyValuePair.Create(key, value);
             PromoteKey(set, setOffset);
+        }
+
+        /* Move the key in the given set at the given offset to the front of the set. */
+        protected void PromoteKey(int set, int setOffset) {
+            int headIndex = set * Ways;
+            int keyIndex = headIndex + setOffset;
+            int newHeadItem = indexArray[keyIndex];
+
+            System.Array.Copy(indexArray, headIndex, indexArray, headIndex + 1, setOffset);
+            indexArray[headIndex] = newHeadItem;
+        }
+
+        /* Move the key in the given set at the given offset to the end of the set. */
+        protected void DemoteKey(int set, int setOffset) {
+            int headIndex = set * Ways;
+            int keyIndex = headIndex + setOffset;
+            int tailIndex = headIndex + Ways - 1;
+            int count = Ways - setOffset - 1;
+            int newTailItem = indexArray[keyIndex];
+
+            System.Array.Copy(indexArray, keyIndex + 1, indexArray, keyIndex, count);
+            indexArray[tailIndex] = newTailItem;
         }
 
     }

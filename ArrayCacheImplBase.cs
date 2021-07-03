@@ -6,15 +6,15 @@ using System.Diagnostics.CodeAnalysis;
 namespace ParksComputing.SetAssociativeCache {
     public abstract class ArrayCacheImplBase<TKey, TValue> : ICachePolicyImpl<TKey, TValue> {
 
+        protected KeyValuePair<TKey, TValue>[] ItemArray { get; set; }
+        public int Sets { get; protected set; }
+        public int Ways { get; protected set; }
+
         public ArrayCacheImplBase(int sets, int ways) {
             Sets = sets;
             Ways = ways;
             ItemArray = new KeyValuePair<TKey, TValue>[Capacity];
         }
-
-        protected KeyValuePair<TKey, TValue>[] ItemArray { get; set; }
-        public int Sets { get; protected set; }
-        public int Ways { get; protected set; }
 
         public TValue this[TKey key] {
             get {
@@ -55,9 +55,11 @@ namespace ParksComputing.SetAssociativeCache {
 
         public abstract void CopyTo(KeyValuePair<TKey, TValue>[] array, int arrayIndex);
 
-        public abstract IEnumerator<KeyValuePair<TKey, TValue>> GetEnumerator();
+        public IEnumerator<KeyValuePair<TKey, TValue>> GetEnumerator() {
+            return Array.AsReadOnly<KeyValuePair<TKey, TValue>>(ItemArray).GetEnumerator();
+        }
 
-        public abstract bool IsReadOnly { get; }
+        public bool IsReadOnly { get => false; }
 
         public abstract void Clear();
 
@@ -70,7 +72,7 @@ namespace ParksComputing.SetAssociativeCache {
         }
 
         IEnumerator IEnumerable.GetEnumerator() {
-            throw new NotImplementedException();
+            return ItemArray.GetEnumerator();
         }
 
     }

@@ -14,16 +14,14 @@ namespace ParksComputing.SetAssociativeCache {
     }
 
     class LfuArrayCacheImpl<TKey, TValue> : ArrayCacheImplBase<TKey, TValue> {
-
-        public LfuArrayCacheImpl(int sets, int ways) : base(sets, ways) {
-            indexArray = new KeyValuePair<int, int>[Capacity];
-            Array.Fill(indexArray, KeyValuePair.Create(int.MaxValue, 0));
-        }
-
         /* Key is index into ItemArray; Value is usage count. */
         protected KeyValuePair<int, int>[] indexArray;
 
-        public class LruComparer : Comparer<KeyValuePair<int,int>> {
+        public LfuArrayCacheImpl(int sets, int ways) : base(sets, ways) {
+            Clear();
+        }
+
+        public class LfuComparer : Comparer<KeyValuePair<int,int>> {
             // Compares by Length, Height, and Width.
             public override int Compare(KeyValuePair<int, int> x, KeyValuePair<int, int> y) {
                 /* I reversed the sign of < and > because I want a reverse sort */
@@ -39,7 +37,7 @@ namespace ParksComputing.SetAssociativeCache {
             }
         }
 
-        IComparer<KeyValuePair<int, int>> lruComparer = new LruComparer();
+        IComparer<KeyValuePair<int, int>> lfuComparer = new LfuComparer();
 
         override public void Add(TKey key, TValue value) {
             var set = FindSet(key);
@@ -97,7 +95,7 @@ namespace ParksComputing.SetAssociativeCache {
 
                 if (itemIndex != int.MaxValue &&
                     ItemArray[itemIndex].Key.Equals(key)) {
-                    UpdateSet(set, setOffset);
+                    PromoteKey(set, setOffset);
                     return true;
                 }
             }
@@ -115,7 +113,7 @@ namespace ParksComputing.SetAssociativeCache {
                 if (itemIndex != int.MaxValue &&
                     ItemArray[itemIndex].Key.Equals(item.Key) &&
                     ItemArray[itemIndex].Value.Equals(item.Value)) {
-                    UpdateSet(set, setOffset);
+                    PromoteKey(set, setOffset);
                     return true;
                 }
             }
@@ -131,7 +129,7 @@ namespace ParksComputing.SetAssociativeCache {
                 int itemIndex = indexArray[offsetIndex].Key;
 
                 if (itemIndex != int.MaxValue && ItemArray[itemIndex].Key.Equals(key)) {
-                    UpdateSet(set, setOffset);
+                    PromoteKey(set, setOffset);
                     value = ItemArray[itemIndex].Value;
                     return true;
                 }
@@ -154,7 +152,7 @@ namespace ParksComputing.SetAssociativeCache {
                     but for some reason it make me nervous. I suppose I could make value replacement 
                     a feature of the policy class. */
                     indexArray[offsetIndex] = KeyValuePair.Create(itemIndex, indexArray[offsetIndex].Value);
-                    UpdateSet(set, setOffset);
+                    DemoteKey(set, setOffset);
                     return true;
                 }
             }
@@ -177,7 +175,7 @@ namespace ParksComputing.SetAssociativeCache {
                     but for some reason it make me nervous. I suppose I could make value replacement 
                     a feature of the policy class. */
                     indexArray[offsetIndex] = KeyValuePair.Create(itemIndex, indexArray[offsetIndex].Value);
-                    UpdateSet(set, setOffset);
+                    DemoteKey(set, setOffset);
                     return true;
                 }
             }
@@ -221,24 +219,42 @@ namespace ParksComputing.SetAssociativeCache {
             }
         }
 
-        public override IEnumerator<KeyValuePair<TKey, TValue>> GetEnumerator() {
-            throw new NotImplementedException();
-        }
-
-        public override bool IsReadOnly { get => false; }
-
         public override void Clear() {
-            throw new NotImplementedException();
-        }
-
-        protected void UpdateSet(int set, int offset) {
-            int setStart = set * Ways;
-            Array.Sort(indexArray, setStart, Ways, lruComparer);
+            /* Keep in mind that the data aren't cleared. We are clearing the indices which point 
+            to the data. With no indices, the data aren't accessible. */
+            indexArray = new KeyValuePair<int, int>[Capacity];
+            Array.Fill(indexArray, KeyValuePair.Create(int.MaxValue, 0));
         }
 
         protected void Add(TKey key, TValue value, int set, int setOffset, int itemIndex) {
             ItemArray[itemIndex] = KeyValuePair.Create(key, value);
-            UpdateSet(set, setOffset);
+            int headIndex = set * Ways;
+            int keyIndex = headIndex + setOffset;
+            var newHeadItem = KeyValuePair.Create(indexArray[keyIndex].Key, 1);
+
+            /* The new index gets sorted to the front, but with a count of 1. A newly-cached item 
+            should not be immediately evicted, so it's safe until pushed down by other new items. */
+            System.Array.Copy(indexArray, headIndex, indexArray, headIndex + 1, setOffset);
+            indexArray[headIndex] = newHeadItem;
+        }
+
+        /* Increment the count for the last cache item accessed, then sort the set based on all counts. */
+        protected void PromoteKey(int set, int setOffset) {
+            int headIndex = set * Ways;
+            int keyIndex = headIndex + setOffset;
+            indexArray[keyIndex] = KeyValuePair.Create(indexArray[keyIndex].Key, indexArray[keyIndex].Value + 1);
+
+            Array.Sort(indexArray, headIndex, Ways, lfuComparer);
+        }
+
+        /* Set an item's count to zero (removal from cache, for example), then sort the set based 
+        on all counts. */
+        protected void DemoteKey(int set, int setOffset) {
+            int headIndex = set * Ways;
+            int keyIndex = headIndex + setOffset;
+            indexArray[keyIndex] = KeyValuePair.Create(indexArray[keyIndex].Key, 0);
+
+            Array.Sort(indexArray, headIndex, Ways, lfuComparer);
         }
 
     }
