@@ -6,9 +6,19 @@ using System.Diagnostics.CodeAnalysis;
 namespace ParksComputing.SetAssociativeCache {
     public abstract class ArrayCacheImplBase<TKey, TValue> : ICachePolicyImpl<TKey, TValue> {
 
+        protected int sets_;
+        protected int ways_;
+
         protected KeyValuePair<TKey, TValue>[] ItemArray { get; set; }
-        public int Sets { get; protected set; }
-        public int Ways { get; protected set; }
+        public int Sets { 
+            get => sets_; 
+            protected set => sets_ = value; 
+        }
+
+        public int Ways { 
+            get => ways_; 
+            protected set => ways_ = value; 
+        }
 
         public ArrayCacheImplBase(int sets, int ways) {
             Sets = sets;
@@ -68,7 +78,7 @@ namespace ParksComputing.SetAssociativeCache {
             a simple MOD operation. A better hashing algorithm is probably a good idea. */
             /* The bitwise OR removes the high bit so that we only get a positive number */
             int hashCode = key.GetHashCode() & 0x7FFFFFFF; 
-            return hashCode % Sets;
+            return hashCode % sets_;
         }
 
         IEnumerator IEnumerable.GetEnumerator() {
