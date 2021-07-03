@@ -78,7 +78,7 @@ namespace ParksComputing.SetAssociativeCache {
 
                 if (itemIndex != int.MaxValue &&
                     ItemArray[itemIndex].Key.Equals(key)) {
-                    UpdateSet(set, setOffset);
+                    PromoteKey(set, setOffset);
                     return true;
                 }
             }
@@ -96,7 +96,7 @@ namespace ParksComputing.SetAssociativeCache {
                 if (itemIndex != int.MaxValue &&
                     ItemArray[itemIndex].Key.Equals(item.Key) &&
                     ItemArray[itemIndex].Value.Equals(item.Value)) {
-                    UpdateSet(set, setOffset);
+                    PromoteKey(set, setOffset);
                     return true;
                 }
             }
@@ -112,7 +112,7 @@ namespace ParksComputing.SetAssociativeCache {
                 int itemIndex = indexArray[offsetIndex];
 
                 if (itemIndex != int.MaxValue && ItemArray[itemIndex].Key.Equals(key)) {
-                    UpdateSet(set, setOffset);
+                    PromoteKey(set, setOffset);
                     value = ItemArray[itemIndex].Value;
                     return true;
                 }
@@ -135,7 +135,7 @@ namespace ParksComputing.SetAssociativeCache {
                     but for some reason it make me nervous. I suppose I could make value replacement 
                     a feature of the policy class. */
                     indexArray[offsetIndex] = int.MaxValue;
-                    UpdateSet(set, setOffset);
+                    DemoteKey(set, setOffset);
                     return true;
                 }
             }
@@ -158,7 +158,7 @@ namespace ParksComputing.SetAssociativeCache {
                     but for some reason it make me nervous. I suppose I could make value replacement 
                     a feature of the policy class. */
                     indexArray[offsetIndex] = int.MaxValue;
-                    UpdateSet(set, setOffset);
+                    DemoteKey(set, setOffset);
                     return true;
                 }
             }
@@ -212,17 +212,29 @@ namespace ParksComputing.SetAssociativeCache {
             throw new NotImplementedException();
         }
 
-        protected void UpdateSet(int set, int offset) {
+        protected void PromoteKey(int set, int offset) {
             int setStart = set * Ways;
-            int headItem = indexArray[setStart + offset];
+            int keyIndex = setStart + offset;
+            int newHeadItem = indexArray[keyIndex];
 
             System.Array.Copy(indexArray, setStart, indexArray, setStart + 1, offset);
-            indexArray[setStart] = headItem;
+            indexArray[setStart] = newHeadItem;
+        }
+
+        protected void DemoteKey(int set, int offset) {
+            int setStart = set * Ways;
+            int keyIndex = setStart + offset;
+            int count = Ways - 1 - offset;
+            int tailIndex = setStart + Ways - 1;
+            int newTailItem = indexArray[keyIndex];
+
+            System.Array.Copy(indexArray, keyIndex + 1, indexArray, keyIndex, count);
+            indexArray[tailIndex] = newTailItem;
         }
 
         protected void Add(TKey key, TValue value, int set, int setOffset, int itemIndex) {
             ItemArray[itemIndex] = KeyValuePair.Create(key, value);
-            UpdateSet(set, setOffset);
+            PromoteKey(set, setOffset);
         }
 
     }

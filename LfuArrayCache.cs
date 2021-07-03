@@ -26,10 +26,11 @@ namespace ParksComputing.SetAssociativeCache {
         public class LruComparer : Comparer<KeyValuePair<int,int>> {
             // Compares by Length, Height, and Width.
             public override int Compare(KeyValuePair<int, int> x, KeyValuePair<int, int> y) {
-                if (x.Value > y.Value) {
+                /* I reversed the sign of < and > because I want a reverse sort */
+                if (x.Value < y.Value) {
                     return 1;
                 }
-                else if (x.Value < y.Value) {
+                else if (x.Value > y.Value) {
                     return -1;
                 }
                 else {
