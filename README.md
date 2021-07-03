@@ -9,6 +9,7 @@ This makes the cache class extensible, since the actual cache policy implementat
     are tracked in an array rather than a linked list, in order to keep it CPU-cache friendly. 
     If we decide later that a least-frequently used cache (LFU) cache is more appropriate, we can 
     change LruArrayCache to LfuArrayCache. We could also add new policy classes with other implementations. */
+    
 
     var coupleCache = new SetAssociativeCache<string, string, LruArrayCache>(2, 4);
 
