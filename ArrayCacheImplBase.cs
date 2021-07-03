@@ -64,7 +64,8 @@ namespace ParksComputing.SetAssociativeCache {
         protected int FindSet(TKey key) {
             /* For integer types, GetHashCode() returns the integer, so what we end up with here is 
             a simple MOD operation. A better hashing algorithm is probably a good idea. */
-            int hashCode = key.GetHashCode();
+            /* The bitwise OR removes the high bit so that we only get a positive number */
+            int hashCode = key.GetHashCode() & 0x7FFFFFFF; 
             return hashCode % Sets;
         }
 
