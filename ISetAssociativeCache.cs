@@ -66,10 +66,28 @@ namespace ParksComputing.SetAssociativeCache {
             get;
         }
 
-        int Ways { get; }
-
+        //
+        // Summary:
+        //     Gets the number of sets in the cache
+        //
+        // Returns:
+        //     The number of sets in the cache
         int Sets { get; }
 
+        //
+        // Summary:
+        //     Gets the capacity in each set
+        //
+        // Returns:
+        //     The number of elements which may be stored in a set.
+        int Ways { get; }
+
+        //
+        // Summary:
+        //     Gets the capacity of the cache
+        //
+        // Returns:
+        //     The number of elements which may be stored in the cache.
         int Capacity { get; }
 
         //
