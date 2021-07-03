@@ -11,7 +11,10 @@ namespace SetAssociativeCacheTests {
         [Test]
         public void Test1() {
             var cache1 = new SetAssociativeCache<int, int, LruArrayCache>(16, 4);
-            var cache2 = new SetAssociativeCache<char, string, LfuArrayCache>(16, 4);
+            Assert.IsTrue(cache1.Capacity == (16 * 4));
+
+            var cache2 = new SetAssociativeCache<char, string, LfuArrayCache>(6, 6);
+            Assert.IsTrue(cache2.Capacity == (6 * 6));
         }
 
         [Test]

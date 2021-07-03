@@ -18,8 +18,8 @@ namespace ParksComputing.SetAssociativeCache {
             impl = policy.MakeInstance<TKey, TValue>(sets, ways);
         }
 
-        ICachePolicyImpl<TKey, TValue> impl;
         TPolicy policy = new();
+        ICachePolicyImpl<TKey, TValue> impl;
 
         public TValue this[TKey key] {
             get => impl[key];
@@ -33,8 +33,11 @@ namespace ParksComputing.SetAssociativeCache {
         public int Capacity => impl.Capacity;
 
         public ICollection<TKey> Keys => impl.Keys;
+
         public ICollection<TValue> Values => impl.Values;
+
         public int Count => impl.Count;
+
         public bool IsReadOnly => impl.IsReadOnly;
 
         public void Add(TKey key, TValue value) {
