@@ -62,8 +62,8 @@ namespace ParksComputing.SetAssociativeCache {
                 }
             }
 
-            /* If we get here, then the set is full. We'll replace the last item in the set, which is the 
-            least-recently used, then rotate it to the front. */
+            /* If we get here, then the set is full. We'll replace the item in the set with the 
+            lowest count of accesses then sort it to the front. */
             setOffset = ways_ - 1;
             offsetIndex = setBegin + setOffset;
             itemIndex = indexArray_[offsetIndex];
