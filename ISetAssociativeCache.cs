@@ -8,7 +8,7 @@ namespace ParksComputing.SetAssociativeCache {
     // Summary:
     //     Represents a generic set-associative cache of key/value pairs.
     //     Full disclosure: I cribbed most of these comments and the overall structure from
-    //     System.Collections.Generic.IDictionary<>, since that seems to be a good basis for 
+    //     System.Collections.Generic.IDictionary<>, since that seems to be a good analogue for 
     //     this interface as well.
     //
     // Type parameters:
@@ -45,7 +45,8 @@ namespace ParksComputing.SetAssociativeCache {
 
         //
         // Summary:
-        //     Gets an System.Collections.Generic.ICollection`1 containing the keys of the System.Collections.Generic.ISetAssociativeCache`2.
+        //     Gets an System.Collections.Generic.ICollection`1 containing the keys of the
+        //     System.Collections.Generic.ISetAssociativeCache`2.
         //
         // Returns:
         //     An System.Collections.Generic.ICollection`1 containing the keys of the object
@@ -68,6 +69,14 @@ namespace ParksComputing.SetAssociativeCache {
 
         //
         // Summary:
+        //     Gets the capacity of the cache
+        //
+        // Returns:
+        //     The number of elements which may be stored in the cache.
+        int Capacity { get; }
+
+        //
+        // Summary:
         //     Gets the number of sets in the cache
         //
         // Returns:
@@ -84,14 +93,6 @@ namespace ParksComputing.SetAssociativeCache {
 
         //
         // Summary:
-        //     Gets the capacity of the cache
-        //
-        // Returns:
-        //     The number of elements which may be stored in the cache.
-        int Capacity { get; }
-
-        //
-        // Summary:
         //     Adds an element with the provided key and value to the System.Collections.Generic.ISetAssociativeCache`2.
         //
         // Parameters:
@@ -104,9 +105,6 @@ namespace ParksComputing.SetAssociativeCache {
         // Exceptions:
         //   T:System.ArgumentNullException:
         //     key is null.
-        //
-        //   T:System.ArgumentException:
-        //     An element with the same key already exists in the System.Collections.Generic.ISetAssociativeCache`2.
         //
         //   T:System.NotSupportedException:
         //     The System.Collections.Generic.ISetAssociativeCache`2 is read-only.
