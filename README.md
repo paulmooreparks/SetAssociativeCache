@@ -11,7 +11,7 @@ This makes the cache class extensible, since the actual cache policy implementat
     change LruArrayCache to LfuArrayCache. We could also add new policy classes with other implementations. */
     
 
-    var coupleCache = new SetAssociativeCache<string, string, LruArrayCache>(2, 4);
+    var coupleCache = new LruArrayCache<string, string>(2, 4);
 
     Console.WriteLine($"There is room for {coupleCache.Capacity} couples. Let the games begin....");
 
