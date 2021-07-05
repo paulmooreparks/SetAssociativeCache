@@ -3,13 +3,12 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 
 namespace ParksComputing.SetAssociativeCache {
-    public class LfuArrayCache<TKey, TValue> : XfuArrayCache<TKey, TValue> {
-        public LfuArrayCache(int sets, int ways) : base(sets, ways) {
-            Clear();
+    public class MruArrayCache<TKey, TValue> : XruArrayCache<TKey, TValue> {
+        public MruArrayCache(int sets, int ways) : base(sets, ways) {
         }
 
         protected override int ReplacementOffset {
-            get => ways_ - 1;
+            get => 0;
         }
     }
 }

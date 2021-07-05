@@ -13,12 +13,12 @@ namespace ParksComputing.SetAssociativeCache {
         for some reason. */
         protected int sets_; // Number of sets in the cache
         protected int ways_; // Capacity of each set in the cache
-        protected KeyValuePair<TKey, TValue>[] itemArray_; // Key/value pairs stored in the cache
+        protected KeyValuePair<KeyValuePair<TKey,int>, TValue>[] itemArray_; // Key/value pairs stored in the cache
 
         public ArrayCacheImplBase(int sets, int ways) {
             sets_ = sets;
             ways_ = ways;
-            itemArray_ = new KeyValuePair<TKey, TValue>[Capacity];
+            itemArray_ = new KeyValuePair<KeyValuePair<TKey, int>, TValue>[Capacity];
         }
 
         //
@@ -274,7 +274,8 @@ namespace ParksComputing.SetAssociativeCache {
         //     An System.Collections.IEnumerator object that can be used to iterate through
         //     the collection.
         public IEnumerator<KeyValuePair<TKey, TValue>> GetEnumerator() {
-            return Array.AsReadOnly<KeyValuePair<TKey, TValue>>(itemArray_).GetEnumerator();
+            // return Array.AsReadOnly<KeyValuePair<KeyValuePair<TKey, int>, TValue>>(itemArray_).GetEnumerator();
+            throw new NotImplementedException();
         }
 
         //
