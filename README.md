@@ -4,9 +4,10 @@ SetAssociativeCache, and this is parameterized by the key type, value type, and 
 This makes the cache class extensible, since the actual cache policy implementation is provided by the policy class.
 
     /* Create a cache that maps string keys to string values, with 2 sets of 4 elements, or "ways". 
-    The policy class name is passed as the last type parameter. In this example, we use LruArrayCache, 
-    which removes the least-recently used item (LRU) when a new item is added to a full set. Slots 
-    are tracked in an array rather than a linked list, in order to keep it CPU-cache friendly. 
+    In this example, we use the LruArrayCache implementation, which removes the least-recently used 
+    item (LRU) when a new item is added to a full set. Slots are tracked in an array rather than a 
+    linked list, in order to keep it CPU-cache friendly. 
+    
     If we decide later that a least-frequently used cache (LFU) cache is more appropriate, we can 
     change LruArrayCache to LfuArrayCache. We could also add new policy classes with other implementations. */
     
