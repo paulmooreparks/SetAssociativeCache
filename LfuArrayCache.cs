@@ -3,20 +3,14 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 
 namespace ParksComputing.SetAssociativeCache {
-    public class LfuArrayCache : ICachePolicy {
-        ICachePolicyImpl<TKey, TValue> ICachePolicy.MakeInstance<TKey, TValue> (int capacity, int sets) {
-            return new LfuArrayCacheImpl<TKey, TValue>(capacity, sets);
-        }
-    }
-
-    class LfuArrayCacheImpl<TKey, TValue> : ArrayCacheImplBase<TKey, TValue> {
+    public class LfuArrayCache<TKey, TValue> : ArrayCacheImplBase<TKey, TValue> {
         /* TKey is index into ItemArray; TValue is usage count. */
         protected KeyValuePair<int, int>[] indexArray_;
 
         /* Comparer object used to sort items in indexArray in LFU order. */
         IComparer<KeyValuePair<int, int>> lfuComparer_ = new LfuComparer();
 
-        public LfuArrayCacheImpl(int sets, int ways) : base(sets, ways) {
+        public LfuArrayCache(int sets, int ways) : base(sets, ways) {
             Clear();
         }
 

@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 
 namespace ParksComputing.SetAssociativeCache {
-    public abstract class ArrayCacheImplBase<TKey, TValue> : ICachePolicyImpl<TKey, TValue> {
+    public abstract class ArrayCacheImplBase<TKey, TValue> : ISetAssociativeCache<TKey, TValue> {
 
         /* I'm being a very naughty object-oriented developer. By using fields instead of 
         properties, I've found that I can eliminate function calls from the release version 

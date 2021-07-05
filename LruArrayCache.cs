@@ -3,17 +3,11 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 
 namespace ParksComputing.SetAssociativeCache {
-    public class LruArrayCache : ICachePolicy {
-        ICachePolicyImpl<TKey, TValue> ICachePolicy.MakeInstance<TKey, TValue>(int sets, int ways) {
-            return new LruArrayCacheImpl<TKey, TValue>(sets, ways);
-        }
-    }
-
-    class LruArrayCacheImpl<TKey, TValue> : ArrayCacheImplBase<TKey, TValue> {
+    public class LruArrayCache<TKey, TValue> : ArrayCacheImplBase<TKey, TValue> {
         /* Array of indices into ItemArray, split into sets, where each set is sorted from MRU to LRU. */
         protected int[] indexArray_;
 
-        public LruArrayCacheImpl(int sets, int ways) : base(sets, ways) {
+        public LruArrayCache(int sets, int ways) : base(sets, ways) {
             Clear();
         }
 

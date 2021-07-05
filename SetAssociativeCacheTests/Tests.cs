@@ -10,16 +10,16 @@ namespace SetAssociativeCacheTests {
 
         [Test]
         public void Test1() {
-            var cache1 = new SetAssociativeCache<int, int, LruArrayCache>(16, 4);
+            var cache1 = new LruArrayCache<int, int>(16, 4);
             Assert.IsTrue(cache1.Capacity == (16 * 4));
 
-            var cache2 = new SetAssociativeCache<char, string, LfuArrayCache>(6, 6);
+            var cache2 = new LfuArrayCache<char, string>(6, 6);
             Assert.IsTrue(cache2.Capacity == (6 * 6));
         }
 
         [Test]
         public void Test2() {
-            var cache1 = new SetAssociativeCache<int, int, LruArrayCache>(4, 4);
+            var cache1 = new LruArrayCache<int, int>(4, 4);
             cache1.Add(38, 9);
             Assert.IsTrue(cache1.Count == 1);
             cache1.Add(34, 123);
