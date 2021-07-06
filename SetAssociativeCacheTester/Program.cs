@@ -12,8 +12,26 @@ namespace SetAssociativeCacheSample {
         static void Main(string[] args) {
             string line;
             int lineCount = 0;
+            bool dump = false;
+            bool timer = false;
+
+            if (args.Count() >= 1) {
+                for (int argIndex = 0; argIndex < args.Count(); ++argIndex) {
+                    var arg = args[argIndex].ToLower();
+
+                    if (arg == "-d" || arg == "--dump") {
+                        dump = true;
+                    }
+                    else if (arg == "-t" || arg == "--timer") {
+                        timer = true;
+                    }
+                }
+            }
 
             ISetAssociativeCache<string, string> cache = null; // = new LruArrayCache<string, string>(1, 500);
+
+            DateTime startTime = DateTime.Now;
+            DateTime endTime = startTime;
 
             // Process each line in the input.
             while (!string.IsNullOrEmpty(line = Console.In.ReadLine())) {
@@ -63,13 +81,23 @@ namespace SetAssociativeCacheSample {
                 }
             }
 
-            if (args.Count() >= 1 && (args[0].ToLower() == "-d" || args[0].ToLower() == "--dump")) {
+            endTime = DateTime.Now;
+
+            if (dump) {
                 Console.WriteLine();
                 Console.WriteLine("Cache dump:");
 
                 foreach (var item in cache) {
                     Console.WriteLine($"{item.Key} = {item.Value}");
                 }
+            }
+
+            if (timer) {
+                Console.WriteLine();
+                Console.WriteLine("Execution time:");
+                TimeSpan duration = endTime - startTime;
+
+                Console.WriteLine($"{duration.ToString("c")}");
             }
         }
 
