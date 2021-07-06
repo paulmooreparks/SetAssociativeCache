@@ -18,6 +18,11 @@ namespace ParksComputing.SetAssociativeCache {
         protected int version_; // Increments each time an element is added or removed, to invalidate enumerators.
         protected KeyValuePair<TKey, TValue>[] itemArray_; // Key/value pairs stored in the cache
 
+        /// <summary>
+        /// Create a new <c>ArrayCacheImplBase</c> instance.
+        /// </summary>
+        /// <param name="sets">The number of sets into which the cache is divided.</param>
+        /// <param name="ways">The number of storage slots in each set.</param>
         public ArrayCacheImplBase(int sets, int ways) {
             sets_ = sets;
             ways_ = ways;
@@ -94,21 +99,6 @@ namespace ParksComputing.SetAssociativeCache {
             Add(item.Key, item.Value);
         }
 
-        //
-        // Summary:
-
-        //
-        // Parameters:
-        //   key:
-        //     The key to locate in the ParksComputing.ISetAssociativeCache.
-        //
-        // Returns:
-
-        //
-        // Exceptions:
-        //   T:System.ArgumentNullException:
-        //     key is null.
-
         /// <summary>
         /// Determines whether the ParksComputing.ISetAssociativeCache contains an element with the specified key.
         /// </summary>
@@ -175,40 +165,31 @@ namespace ParksComputing.SetAssociativeCache {
         /// </value>
         public abstract ICollection<TValue> Values { get; }
 
-        //
-        // Summary:
-        //     Copies the elements of the System.Collections.Generic.ICollection to an System.Array,
-        //     starting at a particular System.Array index.
-        //
-        // Parameters:
-        //   array:
-        //     The one-dimensional System.Array that is the destination of the elements copied
-        //     from System.Collections.Generic.ICollection. The System.Array must have zero-based
-        //     indexing.
-        //
-        //   arrayIndex:
-        //     The zero-based index in array at which copying begins.
-        //
-        // Exceptions:
-        //   T:System.ArgumentNullException:
-        //     array is null.
-        //
-        //   T:System.ArgumentOutOfRangeException:
-        //     arrayIndex is less than 0.
-        //
-        //   T:System.ArgumentException:
-        //     The number of elements in the source System.Collections.Generic.ICollection
-        //     is greater than the available space from arrayIndex to the end of the destination
-        //     array.
+        /// <summary>
+        /// Copies the elements of the System.Collections.Generic.ICollection to an 
+        /// System.Array, starting at a particular System.Array index.
+        /// </summary>
+        /// <param name="array">
+        /// The one-dimensional System.Array that is the destination of the elements copied from 
+        /// System.Collections.Generic.ICollection. The System.Array must have zero-based indexing.
+        /// </param>
+        /// <param name="arrayIndex">
+        /// The zero-based index in array at which copying begins.
+        /// </param>
+        /// <exception cref="System.ArgumentNullException"><paramref name="array"/> is null.</exception>
+        /// <exception cref="System.ArgumentOutOfRangeException"><paramref name="arrayIndex"/> is less than 0.</exception>
+        /// <exception cref="System.ArgumentException">
+        /// The number of elements in the source System.Collections.Generic.ICollection is greater than the 
+        /// available space from arrayIndex to the end of the destination array.
+        /// </exception>
         public abstract void CopyTo(KeyValuePair<TKey, TValue>[] array, int arrayIndex);
 
-        //
-        // Summary:
-        //     Returns an enumerator that iterates through a collection.
-        //
-        // Returns:
-        //     An System.Collections.IEnumerator object that can be used to iterate through
-        //     the collection.
+        /// <summary>
+        /// Returns an enumerator that iterates through a collection.
+        /// </summary>
+        /// <returns>
+        /// An System.Collections.IEnumerator object that can be used to iterate through the collection.
+        /// </returns>
         public IEnumerator<KeyValuePair<TKey, TValue>> GetEnumerator() {
             return new CacheEnumerator(this);
         }

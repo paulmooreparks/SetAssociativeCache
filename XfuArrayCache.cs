@@ -13,27 +13,22 @@ namespace ParksComputing.SetAssociativeCache {
         /* Comparer object used to sort items in indexArray in LFU order. */
         readonly IComparer<KeyValuePair<int, int>> lfuComparer_ = new XfuComparer();
 
+        /// <summary>
+        /// Create a new <c>XfuArrayCache</c> instance.
+        /// </summary>
+        /// <param name="sets">The number of sets into which the cache is divided.</param>
+        /// <param name="ways">The number of storage slots in each set.</param>
         public XfuArrayCache(int sets, int ways) : base(sets, ways) {
             Clear();
         }
 
-        //
-        // Summary:
-        //     Adds an element with the provided key and value to the System.Collections.Generic.ISetAssociativeCache`2.
-        //
-        // Parameters:
-        //   key:
-        //     The object to use as the key of the element to add.
-        //
-        //   value:
-        //     The object to use as the value of the element to add.
-        //
-        // Exceptions:
-        //   T:System.ArgumentNullException:
-        //     key is null.
-        //
-        //   T:System.NotSupportedException:
-        //     The System.Collections.Generic.ISetAssociativeCache`2 is read-only.
+        /// <summary>
+        /// Adds an element with the provided <paramref name="key"/> and <paramref name="value"/> 
+        /// to the ParksComputing.ISetAssociativeCache.
+        /// </summary>
+        /// <param name="key">The object to use as the key of the element to add.</param>
+        /// <param name="value">The object to use as the value of the element to add.</param>
+        /// <exception cref="System.ArgumentNullException"><paramref name="key"/> is null.</exception>
         override public void Add(TKey key, TValue value) {
             if (key == null) {
                 throw new ArgumentNullException("key");
@@ -71,6 +66,9 @@ namespace ParksComputing.SetAssociativeCache {
             return;
         }
 
+        /// <summary>
+        /// The offset into the set for the item which should be evicted from the cache.
+        /// </summary>
         protected abstract int ReplacementOffset { get; }
 
         //
