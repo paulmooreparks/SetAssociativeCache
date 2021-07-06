@@ -1,0 +1,9 @@
+1, 2, LRUReplacementAlgo
+Set, Eggs, Ham
+Set, Sam, Iam
+Set, Green, EggsAndHam
+Get, Sam
+Get, Green
+ContainsKey, Eggs
+ContainsKey, Sam
+ContainsKey, Green

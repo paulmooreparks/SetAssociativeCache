@@ -7,8 +7,11 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="SetAssociativeCacheTester\**" />
     <Compile Remove="SetAssociativeCacheTests\**" />
+    <EmbeddedResource Remove="SetAssociativeCacheTester\**" />
     <EmbeddedResource Remove="SetAssociativeCacheTests\**" />
+    <None Remove="SetAssociativeCacheTester\**" />
     <None Remove="SetAssociativeCacheTests\**" />
   </ItemGroup>
 

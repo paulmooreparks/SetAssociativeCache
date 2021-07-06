@@ -1,0 +1,9 @@
+{
+  "profiles": {
+    "SetAssociativeCacheSample": {
+      "commandName": "Project",
+      "commandLineArgs": "-d < ../../../Tests/Test1.txt",
+      "nativeDebugging": false
+    }
+  }
+}
