@@ -1,8 +1,4 @@
 ﻿using System;
-using System.IO;
-using System.Collections.Generic;
-using System.Reflection.PortableExecutable;
-
 using NUnit.Framework;
 using ParksComputing.SetAssociativeCache;
 using System.Linq;

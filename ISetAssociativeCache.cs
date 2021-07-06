@@ -1,173 +1,117 @@
-﻿using System;
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 
 namespace ParksComputing.SetAssociativeCache {
-    //
-    // Summary:
-    //     Represents a generic set-associative cache of key/value pairs.
-    //     Full disclosure: I cribbed most of these comments and the overall structure from
-    //     System.Collections.Generic.IDictionary<>, since that seems to be a good analogue for 
-    //     this interface as well.
-    //
-    // Type parameters:
-    //   TKey:
-    //     The type of keys in the cache.
-    //
-    //   TValue:
-    //     The type of values in the cache.
+
+
+    /// <summary>
+    /// Represents a generic set-associative cache of key/value pairs.
+    /// Full disclosure: I cribbed most of these comments and the overall structure from
+    /// System.Collections.Generic.IDictionary<>, since that seems to be a good analogue for 
+    /// this interface as well.
+    /// </summary>
+    /// <typeparam name="TKey">The type of keys in the cache.</typeparam>
+    /// <typeparam name="TValue">The type of values in the cache.</typeparam>
     public interface ISetAssociativeCache<TKey, TValue> : ICollection<KeyValuePair<TKey, TValue>>, IEnumerable<KeyValuePair<TKey, TValue>>, IEnumerable {
-        //
-        // Summary:
-        //     Gets or sets the element with the specified key.
-        //
-        // Parameters:
-        //   key:
-        //     The key of the element to get or set.
-        //
-        // Returns:
-        //     The element with the specified key.
-        //
-        // Exceptions:
-        //   T:System.ArgumentNullException:
-        //     key is null.
-        //
-        //   T:System.Collections.Generic.KeyNotFoundException:
-        //     The property is retrieved and key is not found.
-        //
-        //   T:System.NotSupportedException:
-        //     The property is set and the System.Collections.Generic.ISetAssociativeCache`2 is read-only.
+        /// <summary>
+        /// Gets or sets the element with the specified key.
+        /// </summary>
+        /// <param name="key">The key of the element to get or set.</param>
+        /// <returns>The element with the specified key.</returns>
+        /// <exception cref="System.ArgumentNullException">key is null.</exception>
+        /// <exception cref="System.Collections.Generic.KeyNotFoundException">The property is retrieved and key is not found.</exception>
         TValue this[TKey key] {
             get;
             set;
         }
 
-        //
-        // Summary:
-        //     Gets an System.Collections.Generic.ICollection`1 containing the keys of the
-        //     System.Collections.Generic.ISetAssociativeCache`2.
-        //
-        // Returns:
-        //     An System.Collections.Generic.ICollection`1 containing the keys of the object
-        //     that implements System.Collections.Generic.ISetAssociativeCache`2.
+        /// <summary>
+        /// Gets an System.Collections.Generic.ICollection`1 containing the keys of the System.Collections.Generic.ISetAssociativeCache`2.
+        /// </summary>
+        /// <value>
+        /// An System.Collections.Generic.ICollection`1 containing the keys of the object that implements System.Collections.Generic.ISetAssociativeCache`2.
+        /// </value>
         ICollection<TKey> Keys {
             get;
         }
 
-        //
-        // Summary:
-        //     Gets an System.Collections.Generic.ICollection`1 containing the values in the
-        //     System.Collections.Generic.ISetAssociativeCache`2.
-        //
-        // Returns:
-        //     An System.Collections.Generic.ICollection`1 containing the values in the object
-        //     that implements System.Collections.Generic.ISetAssociativeCache`2.
+        /// <summary>
+        /// Gets an System.Collections.Generic.ICollection`1 containing the values in the System.Collections.Generic.ISetAssociativeCache`2.
+        /// </summary>
+        /// <value>
+        /// An System.Collections.Generic.ICollection`1 containing the values in the object that implements System.Collections.Generic.ISetAssociativeCache`2.
+        /// </value>
         ICollection<TValue> Values {
             get;
         }
 
-        //
-        // Summary:
-        //     Gets the capacity of the cache
-        //
-        // Returns:
-        //     The number of elements which may be stored in the cache.
+        /// <summary>
+        /// Gets the capacity of the cache
+        /// </summary>
+        /// <value>
+        /// The number of elements which may be stored in the cache.
+        /// </value>
         int Capacity { get; }
 
-        //
-        // Summary:
-        //     Gets the number of sets in the cache
-        //
-        // Returns:
-        //     The number of sets in the cache
+        /// <summary>
+        /// Gets the number of sets in the cache
+        /// </summary>
+        /// <value>
+        /// The number of sets in the cache
+        /// </value>
         int Sets { get; }
 
-        //
-        // Summary:
-        //     Gets the capacity in each set
-        //
-        // Returns:
-        //     The number of elements which may be stored in a set.
+        /// <summary>
+        /// Gets the capacity in each set
+        /// </summary>
+        /// <value>
+        /// The number of elements which may be stored in a set.
+        /// </value>
         int Ways { get; }
 
-        //
-        // Summary:
-        //     Adds an element with the provided key and value to the System.Collections.Generic.ISetAssociativeCache`2.
-        //
-        // Parameters:
-        //   key:
-        //     The object to use as the key of the element to add.
-        //
-        //   value:
-        //     The object to use as the value of the element to add.
-        //
-        // Exceptions:
-        //   T:System.ArgumentNullException:
-        //     key is null.
-        //
-        //   T:System.NotSupportedException:
-        //     The System.Collections.Generic.ISetAssociativeCache`2 is read-only.
+        /// <summary>
+        /// Adds an element with the provided key and value to the System.Collections.Generic.ISetAssociativeCache`2.
+        /// </summary>
+        /// <param name="key">The object to use as the key of the element to add.</param>
+        /// <param name="value">The object to use as the value of the element to add.</param>
+        /// <exception cref="System.ArgumentNullException">key is null.</exception>
         void Add(TKey key, TValue value);
 
-        //
-        // Summary:
-        //     Determines whether the System.Collections.Generic.ISetAssociativeCache`2 contains an element
-        //     with the specified key.
-        //
-        // Parameters:
-        //   key:
-        //     The key to locate in the System.Collections.Generic.ISetAssociativeCache`2.
-        //
-        // Returns:
-        //     true if the System.Collections.Generic.ISetAssociativeCache`2 contains an element with
-        //     the key; otherwise, false.
-        //
-        // Exceptions:
-        //   T:System.ArgumentNullException:
-        //     key is null.
+        /// <summary>
+        /// Determines whether the System.Collections.Generic.ISetAssociativeCache`2 contains an element with the specified key.
+        /// </summary>
+        /// <param name="key">The key to locate in the System.Collections.Generic.ISetAssociativeCache`2.</param>
+        /// <returns>
+        /// true if the System.Collections.Generic.ISetAssociativeCache`2 contains an element with the key; otherwise, false.
+        /// </returns>
+        /// <exception cref="System.ArgumentNullException">key is null.</exception>
         bool ContainsKey(TKey key);
 
-        //
-        // Summary:
-        //     Removes the element with the specified key from the System.Collections.Generic.ISetAssociativeCache`2.
-        //
-        // Parameters:
-        //   key:
-        //     The key of the element to remove.
-        //
-        // Returns:
-        //     true if the element is successfully removed; otherwise, false. This method also
-        //     returns false if key was not found in the original System.Collections.Generic.ISetAssociativeCache`2.
-        //
-        // Exceptions:
-        //   T:System.ArgumentNullException:
-        //     key is null.
-        //
-        //   T:System.NotSupportedException:
-        //     The System.Collections.Generic.ISetAssociativeCache`2 is read-only.
+        /// <summary>
+        /// Removes the element with the specified key from the System.Collections.Generic.ISetAssociativeCache`2.
+        /// </summary>
+        /// <param name="key">The key of the element to remove.</param>
+        /// <returns>
+        /// true if the element is successfully removed; otherwise, false. This method also returns false if key 
+        /// was not found in the original System.Collections.Generic.ISetAssociativeCache`2.
+        /// </returns>
         bool Remove(TKey key);
 
-        //
-        // Summary:
-        //     Gets the value associated with the specified key.
-        //
-        // Parameters:
-        //   key:
-        //     The key whose value to get.
-        //
-        //   value:
-        //     When this method returns, the value associated with the specified key, if the
-        //     key is found; otherwise, the default value for the type of the value parameter.
-        //     This parameter is passed uninitialized.
-        //
-        // Returns:
-        //     true if the object that implements System.Collections.Generic.ISetAssociativeCache`2 contains
-        //     an element with the specified key; otherwise, false.
-        //
-        // Exceptions:
-        //   T:System.ArgumentNullException:
-        //     key is null.
+        /// <summary>
+        /// Gets the value associated with the specified key.
+        /// </summary>
+        /// <param name="key">The key whose value to get.</param>
+        /// <param name="value">
+        /// When this method returns, the value associated with the specified key, if the key is found; 
+        /// otherwise, the default value for the type of the value parameter. This parameter is passed 
+        /// uninitialized.
+        /// </param>
+        /// <returns>
+        /// true if the object that implements System.Collections.Generic.ISetAssociativeCache`2 contains 
+        /// an element with the specified key; otherwise, false.
+        /// </returns>
+        /// <exception cref="System.ArgumentNullException">key is null.</exception>
         bool TryGetValue(TKey key, [MaybeNullWhen(false)] out TValue value);
     }
 }
