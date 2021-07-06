@@ -11,7 +11,7 @@ namespace ParksComputing.SetAssociativeCache {
         protected KeyValuePair<int, int>[] indexArray_;
 
         /* Comparer object used to sort items in indexArray in LFU order. */
-        IComparer<KeyValuePair<int, int>> lfuComparer_ = new XfuComparer();
+        readonly IComparer<KeyValuePair<int, int>> lfuComparer_ = new XfuComparer();
 
         public XfuArrayCache(int sets, int ways) : base(sets, ways) {
             Clear();
@@ -41,7 +41,6 @@ namespace ParksComputing.SetAssociativeCache {
 
             var set = FindSet(key);
             var setBegin = set * ways_;
-            var keyHash = key.GetHashCode();
             int setOffset;
             int offsetIndex;
             int itemIndex;
@@ -56,7 +55,7 @@ namespace ParksComputing.SetAssociativeCache {
                     return;
                 }
 
-                if (itemArray_[itemIndex].Key.Value == keyHash) {
+                if (itemArray_[itemIndex].Key.Equals(key)) {
                     itemIndex = indexArray_[offsetIndex].Key;
                     Add(key, value, set, setOffset, itemIndex);
                     return;
@@ -117,13 +116,12 @@ namespace ParksComputing.SetAssociativeCache {
 
             var set = FindSet(key);
             var setBegin = set * ways_;
-            var keyHash = key.GetHashCode();
 
             for (int setOffset = 0, offsetIndex = setBegin; setOffset < ways_; ++setOffset, ++offsetIndex) {
                 int itemIndex = indexArray_[offsetIndex].Key;
 
                 if (itemIndex != int.MaxValue &&
-                    itemArray_[itemIndex].Key.Value == keyHash) {
+                    itemArray_[itemIndex].Key.Equals(key)) {
                     PromoteKey(set, setOffset);
                     return true;
                 }
@@ -147,13 +145,12 @@ namespace ParksComputing.SetAssociativeCache {
         public override bool Contains(KeyValuePair<TKey, TValue> item) {
             var set = FindSet(item.Key);
             var setBegin = set * ways_;
-            var keyHash = item.Key.GetHashCode();
 
             for (int setOffset = 0, offsetIndex = setBegin; setOffset < ways_; ++setOffset, ++offsetIndex) {
                 int itemIndex = indexArray_[offsetIndex].Key;
 
                 if (itemIndex != int.MaxValue &&
-                    itemArray_[itemIndex].Key.Value == keyHash &&
+                    itemArray_[itemIndex].Key.Equals(item.Key) &&
                     itemArray_[itemIndex].Value.Equals(item.Value)) {
                     PromoteKey(set, setOffset);
                     return true;
@@ -194,12 +191,11 @@ namespace ParksComputing.SetAssociativeCache {
 
             var set = FindSet(key);
             var setBegin = set * ways_;
-            var keyHash = key.GetHashCode();
 
             for (int setOffset = 0, offsetIndex = setBegin; setOffset < ways_; ++setOffset, ++offsetIndex) {
                 int itemIndex = indexArray_[offsetIndex].Key;
 
-                if (itemIndex != int.MaxValue && itemArray_[itemIndex].Key.Value == keyHash) {
+                if (itemIndex != int.MaxValue && itemArray_[itemIndex].Key.Equals(key)) {
                     PromoteKey(set, setOffset);
                     value = itemArray_[itemIndex].Value;
                     return true;
@@ -235,12 +231,11 @@ namespace ParksComputing.SetAssociativeCache {
 
             var set = FindSet(key);
             var setBegin = set * ways_;
-            var keyHash = key.GetHashCode();
 
             for (int setOffset = 0, offsetIndex = setBegin; setOffset < ways_; ++setOffset, ++offsetIndex) {
                 int itemIndex = indexArray_[offsetIndex].Key;
 
-                if (itemIndex != int.MaxValue && itemArray_[itemIndex].Key.Value == keyHash) {
+                if (itemIndex != int.MaxValue && itemArray_[itemIndex].Key.Equals(key)) {
                     /* Since all access to the cache values goes through the index array first, 
                     I'll try leaving the value in the cache and see how that goes. It's faster, 
                     but for some reason it make me nervous. I suppose I could make value replacement 
@@ -274,13 +269,12 @@ namespace ParksComputing.SetAssociativeCache {
         public override bool Remove(KeyValuePair<TKey, TValue> item) {
             var set = FindSet(item.Key);
             var setBegin = set * ways_;
-            var keyHash = item.Key.GetHashCode();
 
             for (int setOffset = 0, offsetIndex = setBegin; setOffset < ways_; ++setOffset, ++offsetIndex) {
                 int itemIndex = indexArray_[offsetIndex].Key;
 
                 if (itemIndex != int.MaxValue &&
-                    itemArray_[itemIndex].Key.Value == keyHash &&
+                    itemArray_[itemIndex].Key.Equals(item.Key) &&
                     itemArray_[itemIndex].Value.Equals(item.Value)) {
                     /* Since all access to the cache values goes through the index array first, 
                     I'll try leaving the value in the cache and see how that goes. It's faster, 
@@ -309,7 +303,7 @@ namespace ParksComputing.SetAssociativeCache {
 
                 foreach (KeyValuePair<int, int> itemIndex in indexArray_) {
                     if (itemIndex.Key != int.MaxValue) {
-                        value.Add(itemArray_[itemIndex.Key].Key.Key);
+                        value.Add(itemArray_[itemIndex.Key].Key);
                     }
                 }
 
@@ -374,7 +368,7 @@ namespace ParksComputing.SetAssociativeCache {
 
             foreach (KeyValuePair<int, int> itemIndex in indexArray_) {
                 if (itemIndex.Key != int.MaxValue) {
-                    array[arrayIndex] = KeyValuePair.Create(itemArray_[itemIndex.Key].Key.Key, itemArray_[itemIndex.Key].Value);
+                    array[arrayIndex] = KeyValuePair.Create(itemArray_[itemIndex.Key].Key, itemArray_[itemIndex.Key].Value);
                     ++arrayIndex;
                 }
             }
@@ -416,8 +410,7 @@ namespace ParksComputing.SetAssociativeCache {
         //     The index into the item array at which the element is stored.
         protected void Add(TKey key, TValue value, int set, int setOffset, int itemIndex) {
             ++version_;
-            var hashedKey = KeyValuePair.Create(key, key.GetHashCode());
-            itemArray_[itemIndex] = KeyValuePair.Create(hashedKey, value);
+            itemArray_[itemIndex] = KeyValuePair.Create(key, value);
             int headIndex = set * ways_;
             int keyIndex = headIndex + setOffset;
             var newHeadItem = KeyValuePair.Create(indexArray_[keyIndex].Key, 1);

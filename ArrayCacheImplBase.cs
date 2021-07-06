@@ -16,12 +16,12 @@ namespace ParksComputing.SetAssociativeCache {
         protected int sets_; // Number of sets in the cache
         protected int ways_; // Capacity of each set in the cache
         protected int version_;
-        protected KeyValuePair<KeyValuePair<TKey,int>, TValue>[] itemArray_; // Key/value pairs stored in the cache
+        protected KeyValuePair<TKey, TValue>[] itemArray_; // Key/value pairs stored in the cache
 
         public ArrayCacheImplBase(int sets, int ways) {
             sets_ = sets;
             ways_ = ways;
-            itemArray_ = new KeyValuePair<KeyValuePair<TKey, int>, TValue>[Capacity];
+            itemArray_ = new KeyValuePair<TKey, TValue>[Capacity];
         }
 
         //
@@ -313,7 +313,7 @@ namespace ParksComputing.SetAssociativeCache {
                 }
 
                 while (index_ < count_) {
-                    current_ = new KeyValuePair<TKey, TValue>(cache_.itemArray_[index_].Key.Key, cache_.itemArray_[index_].Value);
+                    current_ = new KeyValuePair<TKey, TValue>(cache_.itemArray_[index_].Key, cache_.itemArray_[index_].Value);
                     ++index_;
                     return true;
                 }
