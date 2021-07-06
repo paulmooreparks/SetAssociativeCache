@@ -3,6 +3,8 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 
+using Microsoft.VisualBasic.CompilerServices;
+
 namespace ParksComputing.SetAssociativeCache {
     public abstract class ArrayCacheImplBase<TKey, TValue> : ISetAssociativeCache<TKey, TValue> {
 
@@ -13,6 +15,7 @@ namespace ParksComputing.SetAssociativeCache {
         for some reason. */
         protected int sets_; // Number of sets in the cache
         protected int ways_; // Capacity of each set in the cache
+        protected int version_;
         protected KeyValuePair<KeyValuePair<TKey,int>, TValue>[] itemArray_; // Key/value pairs stored in the cache
 
         public ArrayCacheImplBase(int sets, int ways) {
@@ -274,8 +277,63 @@ namespace ParksComputing.SetAssociativeCache {
         //     An System.Collections.IEnumerator object that can be used to iterate through
         //     the collection.
         public IEnumerator<KeyValuePair<TKey, TValue>> GetEnumerator() {
-            // return Array.AsReadOnly<KeyValuePair<KeyValuePair<TKey, int>, TValue>>(itemArray_).GetEnumerator();
-            throw new NotImplementedException();
+            return new CacheEnumerator(this);
+        }
+
+        [Serializable]
+        private sealed class CacheEnumerator : IEnumerator<KeyValuePair<TKey, TValue>> {
+            ArrayCacheImplBase<TKey, TValue> cache_;
+            int version_;
+            int count_;
+            int index_;
+            KeyValuePair<TKey, TValue> current_;
+
+            public CacheEnumerator(ArrayCacheImplBase<TKey,TValue> cache) {
+                this.cache_ = cache;
+                this.version_ = cache.version_;
+                this.count_ = cache.Count;
+                Reset();
+            }
+
+            public KeyValuePair<TKey, TValue> Current { get => current_; }
+            
+            object IEnumerator.Current { 
+                get {
+                    if (index_ == 0 || index_ == count_ + 1) {
+                        throw new InvalidOperationException();
+                    }
+
+                    return new KeyValuePair<TKey, TValue>(current_.Key, current_.Value);
+                }
+            }
+
+            public bool MoveNext() {
+                if (version_ != cache_.version_) {
+                    throw new InvalidOperationException("Emumerator is invalid due to cache update");
+                }
+
+                while (index_ < count_) {
+                    current_ = new KeyValuePair<TKey, TValue>(cache_.itemArray_[index_].Key.Key, cache_.itemArray_[index_].Value);
+                    ++index_;
+                    return true;
+                }
+
+                index_ = count_ + 1;
+                current_ = new KeyValuePair<TKey, TValue>();
+                return false;
+            }
+
+            public void Reset() {
+                if (version_ != cache_.version_) {
+                    throw new InvalidOperationException("Emumerator is invalid due to cache update");
+                }
+
+                this.index_ = 0;
+                this.current_ = new KeyValuePair<TKey, TValue>();
+            }
+
+            public void Dispose() {
+            }
         }
 
         //

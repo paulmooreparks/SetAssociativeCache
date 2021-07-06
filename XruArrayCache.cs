@@ -239,6 +239,7 @@ namespace ParksComputing.SetAssociativeCache {
                     I'll try leaving the value in the cache and see how that goes. It's faster, 
                     but for some reason it make me nervous. I suppose I could make value replacement 
                     a feature of the policy class. */
+                    ++version_;
                     indexArray_[offsetIndex] = int.MaxValue;
                     DemoteKey(set, setOffset);
                     return true;
@@ -279,6 +280,7 @@ namespace ParksComputing.SetAssociativeCache {
                     I'll try leaving the value in the cache and see how that goes. It's faster, 
                     but for some reason it make me nervous. I suppose I could make value replacement 
                     a feature of the policy class. */
+                    ++version_;
                     indexArray_[offsetIndex] = int.MaxValue;
                     DemoteKey(set, setOffset);
                     return true;
@@ -382,6 +384,7 @@ namespace ParksComputing.SetAssociativeCache {
         public override void Clear() {
             /* Keep in mind that the data aren't cleared. We are clearing the indices which point 
             to the data. With no indices, the data aren't accessible. */
+            ++version_;
             indexArray_ = new int[Capacity];
             Array.Fill(indexArray_, int.MaxValue);
         }
@@ -406,6 +409,7 @@ namespace ParksComputing.SetAssociativeCache {
         //   itemIndex:
         //     The index into the item array at which the element is stored.
         protected void Add(TKey key, TValue value, int set, int setOffset, int itemIndex) {
+            ++version_;
             var hashedKey = KeyValuePair.Create(key, key.GetHashCode());
             itemArray_[itemIndex] = KeyValuePair.Create(hashedKey, value);
             PromoteKey(set, setOffset);
