@@ -27,20 +27,20 @@ namespace ParksComputing.SetAssociativeCache {
         }
 
         /// <summary>
-        /// Gets an System.Collections.Generic.ICollection`1 containing the keys of the System.Collections.Generic.ISetAssociativeCache`2.
+        /// Gets an System.Collections.Generic.ICollection containing the keys of the ParksComputing.ISetAssociativeCache.
         /// </summary>
         /// <value>
-        /// An System.Collections.Generic.ICollection`1 containing the keys of the object that implements System.Collections.Generic.ISetAssociativeCache`2.
+        /// An System.Collections.Generic.ICollection containing the keys of the object that implements ParksComputing.ISetAssociativeCache.
         /// </value>
         ICollection<TKey> Keys {
             get;
         }
 
         /// <summary>
-        /// Gets an System.Collections.Generic.ICollection`1 containing the values in the System.Collections.Generic.ISetAssociativeCache`2.
+        /// Gets an System.Collections.Generic.ICollection containing the values in the ParksComputing.ISetAssociativeCache.
         /// </summary>
         /// <value>
-        /// An System.Collections.Generic.ICollection`1 containing the values in the object that implements System.Collections.Generic.ISetAssociativeCache`2.
+        /// An System.Collections.Generic.ICollection containing the values in the object that implements ParksComputing.ISetAssociativeCache.
         /// </value>
         ICollection<TValue> Values {
             get;
@@ -71,7 +71,7 @@ namespace ParksComputing.SetAssociativeCache {
         int Ways { get; }
 
         /// <summary>
-        /// Adds an element with the provided key and value to the System.Collections.Generic.ISetAssociativeCache`2.
+        /// Adds an element with the provided key and value to the ParksComputing.ISetAssociativeCache.
         /// </summary>
         /// <param name="key">The object to use as the key of the element to add.</param>
         /// <param name="value">The object to use as the value of the element to add.</param>
@@ -79,22 +79,22 @@ namespace ParksComputing.SetAssociativeCache {
         void Add(TKey key, TValue value);
 
         /// <summary>
-        /// Determines whether the System.Collections.Generic.ISetAssociativeCache`2 contains an element with the specified key.
+        /// Determines whether the ParksComputing.ISetAssociativeCache contains an element with the specified key.
         /// </summary>
-        /// <param name="key">The key to locate in the System.Collections.Generic.ISetAssociativeCache`2.</param>
+        /// <param name="key">The key to locate in the ParksComputing.ISetAssociativeCache.</param>
         /// <returns>
-        /// true if the System.Collections.Generic.ISetAssociativeCache`2 contains an element with the key; otherwise, false.
+        /// true if the ParksComputing.ISetAssociativeCache contains an element with the key; otherwise, false.
         /// </returns>
         /// <exception cref="System.ArgumentNullException">key is null.</exception>
         bool ContainsKey(TKey key);
 
         /// <summary>
-        /// Removes the element with the specified key from the System.Collections.Generic.ISetAssociativeCache`2.
+        /// Removes the element with the specified key from the ParksComputing.ISetAssociativeCache.
         /// </summary>
         /// <param name="key">The key of the element to remove.</param>
         /// <returns>
         /// true if the element is successfully removed; otherwise, false. This method also returns false if key 
-        /// was not found in the original System.Collections.Generic.ISetAssociativeCache`2.
+        /// was not found in the original ParksComputing.ISetAssociativeCache.
         /// </returns>
         bool Remove(TKey key);
 
@@ -108,7 +108,7 @@ namespace ParksComputing.SetAssociativeCache {
         /// uninitialized.
         /// </param>
         /// <returns>
-        /// true if the object that implements System.Collections.Generic.ISetAssociativeCache`2 contains 
+        /// true if the object that implements ParksComputing.ISetAssociativeCache contains 
         /// an element with the specified key; otherwise, false.
         /// </returns>
         /// <exception cref="System.ArgumentNullException">key is null.</exception>
