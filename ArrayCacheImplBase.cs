@@ -6,6 +6,11 @@ using System.Diagnostics.CodeAnalysis;
 using Microsoft.VisualBasic.CompilerServices;
 
 namespace ParksComputing.SetAssociativeCache {
+    /// <summary>
+    /// Abstract base class for implementations of a generic set-associative cache of key/value pairs.
+    /// </summary>
+    /// <typeparam name="TKey">The type of keys in the cache.</typeparam>
+    /// <typeparam name="TValue">The type of values in the cache.</typeparam>
     public abstract class ArrayCacheImplBase<TKey, TValue> : ISetAssociativeCache<TKey, TValue> {
 
         /* I'm being a very naughty object-oriented developer. By using fields instead of 

@@ -3,31 +3,35 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 
 namespace ParksComputing.SetAssociativeCache {
+    /// <summary>
+    /// Base class for caches with an eviction policy based on recency of item usage.
+    /// </summary>
+    /// <typeparam name="TKey">The type of keys in the cache.</typeparam>
+    /// <typeparam name="TValue">The type of values in the cache.</typeparam>
+    /// <remarks>
+    /// There is still a lot of copied code between this class and <c>XfuArrayCache</c>. I need to factor that 
+    /// out into <c>ArrayCacheImplBase</c> or some other appropriate intermediate class.
+    /// </remarks>
     public abstract class XruArrayCache<TKey, TValue> : ArrayCacheImplBase<TKey, TValue> {
         /* Array of indices into ItemArray, split into sets, where each set is sorted from LRU to MRU. */
         protected int[] indexArray_;
 
+        /// <summary>
+        /// Create a new <c>XfuArrayCache</c> instance.
+        /// </summary>
+        /// <param name="sets">The number of sets into which the cache is divided.</param>
+        /// <param name="ways">The number of storage slots in each set.</param>
         public XruArrayCache(int sets, int ways) : base(sets, ways) {
             Clear();
         }
 
-        //
-        // Summary:
-        //     Adds an element with the provided key and value to the System.Collections.Generic.ISetAssociativeCache`2.
-        //
-        // Parameters:
-        //   key:
-        //     The object to use as the key of the element to add.
-        //
-        //   value:
-        //     The object to use as the value of the element to add.
-        //
-        // Exceptions:
-        //   T:System.ArgumentNullException:
-        //     key is null.
-        //
-        //   T:System.NotSupportedException:
-        //     The System.Collections.Generic.ISetAssociativeCache`2 is read-only.
+        /// <summary>
+        /// Adds an element with the provided <paramref name="key"/> and <paramref name="value"/> 
+        /// to the ParksComputing.ISetAssociativeCache.
+        /// </summary>
+        /// <param name="key">The object to use as the key of the element to add.</param>
+        /// <param name="value">The object to use as the value of the element to add.</param>
+        /// <exception cref="System.ArgumentNullException"><paramref name="key"/> is null.</exception>
         override public void Add(TKey key, TValue value) {
             if (key == null) {
                 throw new ArgumentNullException("key");
@@ -65,14 +69,17 @@ namespace ParksComputing.SetAssociativeCache {
             return;
         }
 
+        /// <summary>
+        /// The offset into the set for the item which should be evicted from the cache.
+        /// </summary>
         protected abstract int ReplacementOffset { get; }
 
-        //
-        // Summary:
-        //     Gets the number of elements contained in the System.Collections.Generic.ICollection`1.
-        //
-        // Returns:
-        //     The number of elements contained in the System.Collections.Generic.ICollection`1.
+        /// <summary>
+        /// Gets the number of elements contained in the System.Collections.Generic.ICollection.
+        /// </summary>
+        /// <value>
+        /// The number of elements contained in the System.Collections.Generic.ICollection.
+        /// </value>
         public override int Count {
             get {
                 int value = 0;
@@ -87,22 +94,14 @@ namespace ParksComputing.SetAssociativeCache {
             }
         }
 
-        //
-        // Summary:
-        //     Determines whether the System.Collections.Generic.ISetAssociativeCache`2 contains an element
-        //     with the specified key.
-        //
-        // Parameters:
-        //   key:
-        //     The key to locate in the System.Collections.Generic.ISetAssociativeCache`2.
-        //
-        // Returns:
-        //     true if the System.Collections.Generic.ISetAssociativeCache`2 contains an element with
-        //     the key; otherwise, false.
-        //
-        // Exceptions:
-        //   T:System.ArgumentNullException:
-        //     key is null.
+        /// <summary>
+        /// Determines whether the ParksComputing.ISetAssociativeCache contains an element with the specified key.
+        /// </summary>
+        /// <param name="key">The key to locate in the ParksComputing.ISetAssociativeCache.</param>
+        /// <returns>
+        /// true if the ParksComputing.ISetAssociativeCache contains an element with the key; otherwise, false.
+        /// </returns>
+        /// <exception cref="System.ArgumentNullException">key is null.</exception>
         public override bool ContainsKey(TKey key) {
             if (key == null) {
                 throw new ArgumentNullException("key");
@@ -124,18 +123,11 @@ namespace ParksComputing.SetAssociativeCache {
             return false;
         }
 
-        //
-        // Summary:
-        //     Determines whether the System.Collections.Generic.ICollection`1 contains a specific
-        //     value.
-        //
-        // Parameters:
-        //   item:
-        //     The object to locate in the System.Collections.Generic.ICollection`1.
-        //
-        // Returns:
-        //     true if item is found in the System.Collections.Generic.ICollection`1; otherwise,
-        //     false.
+        /// <summary>
+        /// Determines whether the System.Collections.Generic.ICollection contains a specific value.
+        /// </summary>
+        /// <param name="item">The object to locate in the System.Collections.Generic.ICollection.</param>
+        /// <returns>true if item is found in the System.Collections.Generic.ICollection; otherwise, false.</returns>
         public override bool Contains(KeyValuePair<TKey, TValue> item) {
             var set = FindSet(item.Key);
             var setBegin = set * ways_;
@@ -154,30 +146,24 @@ namespace ParksComputing.SetAssociativeCache {
             return false;
         }
 
-        //
-        // Summary:
-        //     Gets the value associated with the specified key.
-        //     This is the other function(alongside ContainsKey) that needs to be very fast.
-        //     Users will call this method to retrieve values that have been cached. If it's not 
-        //     significantly faster to retrieve the value from the cache than from the original value
-        //     source, there isn't much point in having a cache.
-        //
-        // Parameters:
-        //   key:
-        //     The key whose value to get.
-        //
-        //   value:
-        //     When this method returns, the value associated with the specified key, if the
-        //     key is found; otherwise, the default value for the type of the value parameter.
-        //     This parameter is passed uninitialized.
-        //
-        // Returns:
-        //     true if the object that implements System.Collections.Generic.ISetAssociativeCache`2 contains
-        //     an element with the specified key; otherwise, false.
-        //
-        // Exceptions:
-        //   T:System.ArgumentNullException:
-        //     key is null.
+        /// <summary>
+        /// Gets the value associated with the specified key.
+        /// This is the other function(alongside ContainsKey) that needs to be very fast. Users will call 
+        /// this method to retrieve values that have been cached. If it's not  significantly faster to 
+        /// retrieve the value from the cache than from the original value source, there isn't much point 
+        /// in having a cache.
+        /// </summary>
+        /// <param name="key">The key whose value to get.</param>
+        /// <param name="value">
+        /// When this method returns, the value associated with the specified key, if the key is found; 
+        /// otherwise, the default value for the type of the value parameter. This parameter is passed 
+        /// uninitialized.
+        /// </param>
+        /// <returns>
+        /// true if the object that implements ParksComputing.ISetAssociativeCache contains 
+        /// an element with the specified key; otherwise, false.
+        /// </returns>
+        /// <exception cref="System.ArgumentNullException">key is null.</exception>
         public override bool TryGetValue(TKey key, [MaybeNullWhen(false)] out TValue value) {
             if (key == null) {
                 throw new ArgumentNullException("key");
@@ -200,24 +186,14 @@ namespace ParksComputing.SetAssociativeCache {
             return false;
         }
 
-        //
-        // Summary:
-        //     Removes the element with the specified key from the System.Collections.Generic.ISetAssociativeCache`2.
-        //
-        // Parameters:
-        //   key:
-        //     The key of the element to remove.
-        //
-        // Returns:
-        //     true if the element is successfully removed; otherwise, false. This method also
-        //     returns false if key was not found in the original System.Collections.Generic.ISetAssociativeCache`2.
-        //
-        // Exceptions:
-        //   T:System.ArgumentNullException:
-        //     key is null.
-        //
-        //   T:System.NotSupportedException:
-        //     The System.Collections.Generic.ISetAssociativeCache`2 is read-only.
+        /// <summary>
+        /// Removes the element with the specified key from the ParksComputing.ISetAssociativeCache.
+        /// </summary>
+        /// <param name="key">The key of the element to remove.</param>
+        /// <returns>
+        /// true if the element is successfully removed; otherwise, false. This method also returns false if key 
+        /// was not found in the original ParksComputing.ISetAssociativeCache.
+        /// </returns>
         public override bool Remove(TKey key) {
             if (key == null) {
                 throw new ArgumentNullException("key");
@@ -244,22 +220,14 @@ namespace ParksComputing.SetAssociativeCache {
             return false;
         }
 
-        //
-        // Summary:
-        //     Removes the first occurrence of a specific object from the System.Collections.Generic.ICollection`1.
-        //
-        // Parameters:
-        //   item:
-        //     The object to remove from the System.Collections.Generic.ICollection`1.
-        //
-        // Returns:
-        //     true if item was successfully removed from the System.Collections.Generic.ICollection`1;
-        //     otherwise, false. This method also returns false if item is not found in the
-        //     original System.Collections.Generic.ICollection`1.
-        //
-        // Exceptions:
-        //   T:System.NotSupportedException:
-        //     The System.Collections.Generic.ICollection`1 is read-only.
+        /// <summary>
+        /// Removes the element with the specified key from the ParksComputing.ISetAssociativeCache.
+        /// </summary>
+        /// <param name="key">The key of the element to remove.</param>
+        /// <returns>
+        /// true if the element is successfully removed; otherwise, false. This method also returns false if key 
+        /// was not found in the original ParksComputing.ISetAssociativeCache.
+        /// </returns>
         public override bool Remove(KeyValuePair<TKey, TValue> item) {
             var set = FindSet(item.Key);
             var setBegin = set * ways_;
@@ -284,13 +252,12 @@ namespace ParksComputing.SetAssociativeCache {
             return false;
         }
 
-        //
-        // Summary:
-        //     Gets an System.Collections.Generic.ICollection`1 containing the keys present in the cache.
-        //
-        // Returns:
-        //     An System.Collections.Generic.ICollection`1 containing the keys of the object
-        //     that implements System.Collections.Generic.ISetAssociativeCache`2.
+        /// <summary>
+        /// Gets an System.Collections.Generic.ICollection containing the keys of the ParksComputing.ISetAssociativeCache.
+        /// </summary>
+        /// <value>
+        /// An System.Collections.Generic.ICollection containing the keys of the object that implements ParksComputing.ISetAssociativeCache.
+        /// </value>
         public override ICollection<TKey> Keys {
             get {
                 List<TKey> value = new();
@@ -305,13 +272,12 @@ namespace ParksComputing.SetAssociativeCache {
             }
         }
 
-        //
-        // Summary:
-        //     Gets an System.Collections.Generic.ICollection`1 containing the values present in the cache.
-        //
-        // Returns:
-        //     An System.Collections.Generic.ICollection`1 containing the values in the object
-        //     that implements System.Collections.Generic.ISetAssociativeCache`2.
+        /// <summary>
+        /// Gets an System.Collections.Generic.ICollection containing the values in the ParksComputing.ISetAssociativeCache.
+        /// </summary>
+        /// <value>
+        /// An System.Collections.Generic.ICollection containing the values in the object that implements ParksComputing.ISetAssociativeCache.
+        /// </value>
         public override ICollection<TValue> Values {
             get {
                 List<TValue> value = new();
@@ -326,31 +292,23 @@ namespace ParksComputing.SetAssociativeCache {
             }
         }
 
-        //
-        // Summary:
-        //     Copies the elements of the System.Collections.Generic.ICollection`1 to an System.Array,
-        //     starting at a particular System.Array index.
-        //
-        // Parameters:
-        //   array:
-        //     The one-dimensional System.Array that is the destination of the elements copied
-        //     from System.Collections.Generic.ICollection`1. The System.Array must have zero-based
-        //     indexing.
-        //
-        //   arrayIndex:
-        //     The zero-based index in array at which copying begins.
-        //
-        // Exceptions:
-        //   T:System.ArgumentNullException:
-        //     array is null.
-        //
-        //   T:System.ArgumentOutOfRangeException:
-        //     arrayIndex is less than 0.
-        //
-        //   T:System.ArgumentException:
-        //     The number of elements in the source System.Collections.Generic.ICollection`1
-        //     is greater than the available space from arrayIndex to the end of the destination
-        //     array.
+        /// <summary>
+        /// Copies the elements of the System.Collections.Generic.ICollection to an 
+        /// System.Array, starting at a particular System.Array index.
+        /// </summary>
+        /// <param name="array">
+        /// The one-dimensional System.Array that is the destination of the elements copied from 
+        /// System.Collections.Generic.ICollection. The System.Array must have zero-based indexing.
+        /// </param>
+        /// <param name="arrayIndex">
+        /// The zero-based index in array at which copying begins.
+        /// </param>
+        /// <exception cref="System.ArgumentNullException"><paramref name="array"/> is null.</exception>
+        /// <exception cref="System.ArgumentOutOfRangeException"><paramref name="arrayIndex"/> is less than 0.</exception>
+        /// <exception cref="System.ArgumentException">
+        /// The number of elements in the source System.Collections.Generic.ICollection is greater than the 
+        /// available space from arrayIndex to the end of the destination array.
+        /// </exception>
         public override void CopyTo(KeyValuePair<TKey, TValue>[] array, int arrayIndex) {
             if (array == null) {
                 throw new ArgumentNullException("array");
@@ -368,13 +326,9 @@ namespace ParksComputing.SetAssociativeCache {
             }
         }
 
-        //
-        // Summary:
-        //     Removes all items from the System.Collections.Generic.ICollection`1.
-        //
-        // Exceptions:
-        //   T:System.NotSupportedException:
-        //     The System.Collections.Generic.ICollection`1 is read-only.
+        /// <summary>
+        /// Removes all items from the System.Collections.Generic.ICollection.
+        /// </summary>
         public override void Clear() {
             /* Keep in mind that the data aren't cleared. We are clearing the indices which point 
             to the data. With no indices, the data aren't accessible. */
@@ -383,25 +337,14 @@ namespace ParksComputing.SetAssociativeCache {
             Array.Fill(indexArray_, int.MaxValue);
         }
 
-        //
-        // Summary:
-        //     Adds an element with the provided key and value to the System.Collections.Generic.ISetAssociativeCache`2.
-        //
-        // Parameters:
-        //   key:
-        //     The object to use as the key of the element to add.
-        //
-        //   value:
-        //     The object to use as the value of the element to add.
-        //
-        //   set:
-        //     The set in which to add the element.
-        //
-        //   setOffset:
-        //     The offset into the set at which to add the element.
-        //
-        //   itemIndex:
-        //     The index into the item array at which the element is stored.
+        /// <summary>
+        /// Adds an element with the provided key and value to the ParksComputing.ISetAssociativeCache.
+        /// </summary>
+        /// <param name="key">The object to use as the key of the element to add.</param>
+        /// <param name="value">The object to use as the value of the element to add.</param>
+        /// <param name="set">The set in which to add the element.</param>
+        /// <param name="setOffset">The offset into the set at which to add the element.</param>
+        /// <param name="itemIndex">The index into the item array at which the element is stored.</param>
         protected void Add(TKey key, TValue value, int set, int setOffset, int itemIndex) {
             ++version_;
             itemArray_[itemIndex] = KeyValuePair.Create(key, value);
@@ -409,16 +352,11 @@ namespace ParksComputing.SetAssociativeCache {
         }
 
 
-        //
-        // Summary:
-        //     Move the key in the given set at the given offset to the end of the set. 
-        //
-        // Parameters:
-        //   set:
-        //     The set in which the key is stored.
-        //
-        //   setOffset:
-        //     The offset into the set at which the key is stored.
+        /// <summary>
+        /// Move the key in the given set at the given offset to the front of the set. 
+        /// </summary>
+        /// <param name="set">The set in which the key is stored.</param>
+        /// <param name="setOffset">The offset into the set at which the key is stored.</param>
         protected void PromoteKey(int set, int setOffset) {
             int headIndex = set * ways_;
             int keyIndex = headIndex + setOffset;
@@ -428,16 +366,11 @@ namespace ParksComputing.SetAssociativeCache {
             indexArray_[headIndex] = newHeadItem;
         }
 
-        //
-        // Summary:
-        //     Move the key in the given set at the given offset to the front of the set. 
-        //
-        // Parameters:
-        //   set:
-        //     The set in which the key is stored.
-        //
-        //   setOffset:
-        //     The offset into the set at which the key is stored.
+        /// <summary>
+        /// Move the key in the given set at the given offset to the end of the set. 
+        /// </summary>
+        /// <param name="set">The set in which the key is stored.</param>
+        /// <param name="setOffset">The offset into the set at which the key is stored.</param>
         protected void DemoteKey(int set, int setOffset) {
             int headIndex = set * ways_;
             int keyIndex = headIndex + setOffset;
@@ -448,6 +381,5 @@ namespace ParksComputing.SetAssociativeCache {
             System.Array.Copy(indexArray_, keyIndex + 1, indexArray_, keyIndex, count);
             indexArray_[tailIndex] = newTailItem;
         }
-
     }
 }

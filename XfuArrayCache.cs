@@ -6,6 +6,11 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace ParksComputing.SetAssociativeCache {
+    /// <summary>
+    /// Base class for caches with an eviction policy based on frequency of item usage.
+    /// </summary>
+    /// <typeparam name="TKey">The type of keys in the cache.</typeparam>
+    /// <typeparam name="TValue">The type of values in the cache.</typeparam>
     public abstract class XfuArrayCache<TKey, TValue> : ArrayCacheImplBase<TKey, TValue> {
         /* TKey is index into ItemArray; TValue is usage count. */
         protected KeyValuePair<int, int>[] indexArray_;
