@@ -3,8 +3,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 
-using Microsoft.VisualBasic.CompilerServices;
-
 namespace ParksComputing.SetAssociativeCache {
     /// <summary>
     /// Abstract base class for implementations of a generic set-associative cache of key/value pairs.
@@ -21,6 +19,8 @@ namespace ParksComputing.SetAssociativeCache {
         protected int sets_; // Number of sets in the cache
         protected int ways_; // Capacity of each set in the cache
         protected int version_; // Increments each time an element is added or removed, to invalidate enumerators.
+        /* TKey is index into ItemArray; TValue is interpreted by the eviction policy of the derived class. */
+        protected KeyValuePair<int, int>[] indexArray_;
         protected KeyValuePair<TKey, TValue>[] itemArray_; // Key/value pairs stored in the cache
 
         /// <summary>
@@ -32,6 +32,7 @@ namespace ParksComputing.SetAssociativeCache {
             sets_ = sets;
             ways_ = ways;
             itemArray_ = new KeyValuePair<TKey, TValue>[Capacity];
+            Clear();
         }
 
         /// <summary>
@@ -85,7 +86,24 @@ namespace ParksComputing.SetAssociativeCache {
         /// <value>
         /// The number of elements contained in the System.Collections.Generic.ICollection.
         /// </value>
-        public abstract int Count { get; }
+        public int Count {
+            get {
+                int value = 0;
+
+                foreach (var itemIndex in indexArray_) {
+                    if (itemIndex.Key != int.MaxValue) {
+                        ++value;
+                    }
+                }
+
+                return value;
+            }
+        }
+
+        /// <summary>
+        /// The offset into the set for the item which should be evicted from the cache.
+        /// </summary>
+        protected abstract int ReplacementOffset { get; }
 
         /// <summary>
         /// Adds an element with the provided <paramref name="key"/> and <paramref name="value"/> 
@@ -94,7 +112,42 @@ namespace ParksComputing.SetAssociativeCache {
         /// <param name="key">The object to use as the key of the element to add.</param>
         /// <param name="value">The object to use as the value of the element to add.</param>
         /// <exception cref="System.ArgumentNullException"><paramref name="key"/> is null.</exception>
-        public abstract void Add(TKey key, TValue value);
+        public virtual void Add(TKey key, TValue value) {
+            if (key == null) {
+                throw new ArgumentNullException("key");
+            }
+
+            var set = FindSet(key);
+            var setBegin = set * ways_;
+            int setOffset;
+            int offsetIndex;
+            int itemIndex;
+
+            for (setOffset = 0, offsetIndex = setBegin; setOffset < ways_; ++setOffset, ++offsetIndex) {
+                itemIndex = indexArray_[offsetIndex].Key;
+
+                if (itemIndex == int.MaxValue) {
+                    itemIndex = offsetIndex;
+                    indexArray_[offsetIndex] = KeyValuePair.Create(itemIndex, indexArray_[offsetIndex].Value);
+                    Add(key, value, set, setOffset, itemIndex);
+                    return;
+                }
+
+                if (itemArray_[itemIndex].Key.Equals(key)) {
+                    itemIndex = indexArray_[offsetIndex].Key;
+                    Add(key, value, set, setOffset, itemIndex);
+                    return;
+                }
+            }
+
+            /* If we get here, then the set is full. Evict the appropriate element depending on 
+            policy, then add the new value at that offset. */
+            setOffset = ReplacementOffset;
+            offsetIndex = setBegin + setOffset;
+            itemIndex = indexArray_[offsetIndex].Key;
+            Add(key, value, set, setOffset, itemIndex);
+            return;
+        }
 
         /// <summary>
         /// Adds an item to the cache.
@@ -108,15 +161,53 @@ namespace ParksComputing.SetAssociativeCache {
         /// Determines whether the ParksComputing.ISetAssociativeCache contains an element with the specified key.
         /// </summary>
         /// <param name="key">The key to locate in the ParksComputing.ISetAssociativeCache.</param>
-        /// <returns>true if the ISetAssociativeCache contains an element with the key; otherwise, false.</returns>
-        public abstract bool ContainsKey(TKey key);
+        /// <returns>
+        /// true if the ParksComputing.ISetAssociativeCache contains an element with the key; otherwise, false.
+        /// </returns>
+        /// <exception cref="System.ArgumentNullException">key is null.</exception>
+        public virtual bool ContainsKey(TKey key) {
+            if (key == null) {
+                throw new ArgumentNullException("key");
+            }
+
+            var set = FindSet(key);
+            var setBegin = set * ways_;
+
+            for (int setOffset = 0, offsetIndex = setBegin; setOffset < ways_; ++setOffset, ++offsetIndex) {
+                int itemIndex = indexArray_[offsetIndex].Key;
+
+                if (itemIndex != int.MaxValue &&
+                    itemArray_[itemIndex].Key.Equals(key)) {
+                    PromoteKey(set, setOffset);
+                    return true;
+                }
+            }
+
+            return false;
+        }
 
         /// <summary>
         /// Determines whether the System.Collections.Generic.ICollection contains a specific value.
         /// </summary>
         /// <param name="item">The object to locate in the System.Collections.Generic.ICollection.</param>
         /// <returns>true if item is found in the System.Collections.Generic.ICollection; otherwise, false.</returns>
-        public abstract bool Contains(KeyValuePair<TKey, TValue> item);
+        public virtual bool Contains(KeyValuePair<TKey, TValue> item) {
+            var set = FindSet(item.Key);
+            var setBegin = set * ways_;
+
+            for (int setOffset = 0, offsetIndex = setBegin; setOffset < ways_; ++setOffset, ++offsetIndex) {
+                int itemIndex = indexArray_[offsetIndex].Key;
+
+                if (itemIndex != int.MaxValue &&
+                    itemArray_[itemIndex].Key.Equals(item.Key) &&
+                    itemArray_[itemIndex].Value.Equals(item.Value)) {
+                    PromoteKey(set, setOffset);
+                    return true;
+                }
+            }
+
+            return false;
+        }
 
         /// <summary>
         /// Gets the value associated with the specified key.
@@ -132,7 +223,27 @@ namespace ParksComputing.SetAssociativeCache {
         /// an element with the specified key; otherwise, false.
         /// </returns>
         /// <exception cref="System.ArgumentNullException">key is null.</exception>
-        public abstract bool TryGetValue(TKey key, [MaybeNullWhen(false)] out TValue value);
+        public virtual bool TryGetValue(TKey key, [MaybeNullWhen(false)] out TValue value) {
+            if (key == null) {
+                throw new ArgumentNullException("key");
+            }
+
+            var set = FindSet(key);
+            var setBegin = set * ways_;
+
+            for (int setOffset = 0, offsetIndex = setBegin; setOffset < ways_; ++setOffset, ++offsetIndex) {
+                int itemIndex = indexArray_[offsetIndex].Key;
+
+                if (itemIndex != int.MaxValue && itemArray_[itemIndex].Key.Equals(key)) {
+                    PromoteKey(set, setOffset);
+                    value = itemArray_[itemIndex].Value;
+                    return true;
+                }
+            }
+
+            value = default(TValue);
+            return false;
+        }
 
         /// <summary>
         /// Removes the element with the specified key from the ParksComputing.ISetAssociativeCache.
@@ -142,7 +253,31 @@ namespace ParksComputing.SetAssociativeCache {
         /// true if the element is successfully removed; otherwise, false. This method also returns false if key 
         /// was not found in the original ParksComputing.ISetAssociativeCache.
         /// </returns>
-        public abstract bool Remove(TKey key);
+        public virtual bool Remove(TKey key) {
+            if (key == null) {
+                throw new ArgumentNullException("key");
+            }
+
+            var set = FindSet(key);
+            var setBegin = set * ways_;
+
+            for (int setOffset = 0, offsetIndex = setBegin; setOffset < ways_; ++setOffset, ++offsetIndex) {
+                int itemIndex = indexArray_[offsetIndex].Key;
+
+                if (itemIndex != int.MaxValue && itemArray_[itemIndex].Key.Equals(key)) {
+                    /* Since all access to the cache values goes through the index array first, 
+                    I'll try leaving the value in the cache and see how that goes. It's faster, 
+                    but for some reason it make me nervous. I suppose I could make value replacement 
+                    a feature of the policy class. */
+                    ++version_;
+                    indexArray_[offsetIndex] = KeyValuePair.Create(int.MaxValue, indexArray_[offsetIndex].Value);
+                    DemoteKey(set, setOffset);
+                    return true;
+                }
+            }
+
+            return false;
+        }
 
         /// <summary>
         /// Removes the element with the specified key from the ParksComputing.ISetAssociativeCache.
@@ -152,7 +287,29 @@ namespace ParksComputing.SetAssociativeCache {
         /// true if the element is successfully removed; otherwise, false. This method also returns false if key 
         /// was not found in the original ParksComputing.ISetAssociativeCache.
         /// </returns>
-        public abstract bool Remove(KeyValuePair<TKey, TValue> item);
+        public virtual bool Remove(KeyValuePair<TKey, TValue> item) {
+            var set = FindSet(item.Key);
+            var setBegin = set * ways_;
+
+            for (int setOffset = 0, offsetIndex = setBegin; setOffset < ways_; ++setOffset, ++offsetIndex) {
+                int itemIndex = indexArray_[offsetIndex].Key;
+
+                if (itemIndex != int.MaxValue &&
+                    itemArray_[itemIndex].Key.Equals(item.Key) &&
+                    itemArray_[itemIndex].Value.Equals(item.Value)) {
+                    /* Since all access to the cache values goes through the index array first, 
+                    I'll try leaving the value in the cache and see how that goes. It's faster, 
+                    but for some reason it make me nervous. I suppose I could make value replacement 
+                    a feature of the policy class. */
+                    ++version_;
+                    indexArray_[offsetIndex] = KeyValuePair.Create(int.MaxValue, indexArray_[offsetIndex].Value);
+                    DemoteKey(set, setOffset);
+                    return true;
+                }
+            }
+
+            return false;
+        }
 
         /// <summary>
         /// Gets an System.Collections.Generic.ICollection containing the keys of the ParksComputing.ISetAssociativeCache.
@@ -160,7 +317,19 @@ namespace ParksComputing.SetAssociativeCache {
         /// <value>
         /// An System.Collections.Generic.ICollection containing the keys of the object that implements ParksComputing.ISetAssociativeCache.
         /// </value>
-        public abstract ICollection<TKey> Keys { get; }
+        public virtual ICollection<TKey> Keys {
+            get {
+                List<TKey> value = new();
+
+                foreach (var itemIndex in indexArray_) {
+                    if (itemIndex.Key != int.MaxValue) {
+                        value.Add(itemArray_[itemIndex.Key].Key);
+                    }
+                }
+
+                return value;
+            }
+        }
 
         /// <summary>
         /// Gets an System.Collections.Generic.ICollection containing the values in the ParksComputing.ISetAssociativeCache.
@@ -168,7 +337,19 @@ namespace ParksComputing.SetAssociativeCache {
         /// <value>
         /// An System.Collections.Generic.ICollection containing the values in the object that implements ParksComputing.ISetAssociativeCache.
         /// </value>
-        public abstract ICollection<TValue> Values { get; }
+        public virtual ICollection<TValue> Values {
+            get {
+                List<TValue> value = new();
+
+                foreach (var itemIndex in indexArray_) {
+                    if (itemIndex.Key != int.MaxValue) {
+                        value.Add(itemArray_[itemIndex.Key].Value);
+                    }
+                }
+
+                return value;
+            }
+        }
 
         /// <summary>
         /// Copies the elements of the System.Collections.Generic.ICollection to an 
@@ -187,7 +368,22 @@ namespace ParksComputing.SetAssociativeCache {
         /// The number of elements in the source System.Collections.Generic.ICollection is greater than the 
         /// available space from arrayIndex to the end of the destination array.
         /// </exception>
-        public abstract void CopyTo(KeyValuePair<TKey, TValue>[] array, int arrayIndex);
+        public virtual void CopyTo(KeyValuePair<TKey, TValue>[] array, int arrayIndex) {
+            if (array == null) {
+                throw new ArgumentNullException("array");
+            }
+
+            if (arrayIndex < 0) {
+                throw new ArgumentOutOfRangeException("arrayIndex");
+            }
+
+            foreach (KeyValuePair<int, int> itemIndex in indexArray_) {
+                if (itemIndex.Key != int.MaxValue) {
+                    array[arrayIndex] = KeyValuePair.Create(itemArray_[itemIndex.Key].Key, itemArray_[itemIndex.Key].Value);
+                    ++arrayIndex;
+                }
+            }
+        }
 
         /// <summary>
         /// Returns an enumerator that iterates through a collection.
@@ -274,7 +470,13 @@ namespace ParksComputing.SetAssociativeCache {
         /// <summary>
         /// Removes all items from the System.Collections.Generic.ICollection.
         /// </summary>
-        public abstract void Clear();
+        public virtual void Clear() {
+            /* Keep in mind that the data aren't cleared. We are clearing the indices which point 
+            to the data. With no indices, the data aren't accessible. */
+            ++version_;
+            indexArray_ = new KeyValuePair<int, int>[Capacity];
+            Array.Fill(indexArray_, KeyValuePair.Create(int.MaxValue, 0));
+        }
 
         /// <summary>
         /// Given a key, find the set into which the key should be placed. Since this is an 
@@ -289,5 +491,35 @@ namespace ParksComputing.SetAssociativeCache {
             int hashCode = key.GetHashCode() & 0x7FFFFFFF; 
             return hashCode % sets_;
         }
+
+        /// <summary>
+        /// Adds an element with the provided key and value to the ParksComputing.ISetAssociativeCache.
+        /// </summary>
+        /// <param name="key">The object to use as the key of the element to add.</param>
+        /// <param name="value">The object to use as the value of the element to add.</param>
+        /// <param name="set">The set in which to add the element.</param>
+        /// <param name="setOffset">The offset into the set at which to add the element.</param>
+        /// <param name="itemIndex">The index into the item array at which the element is stored.</param>
+        protected void Add(TKey key, TValue value, int set, int setOffset, int itemIndex) {
+            ++version_;
+            itemArray_[itemIndex] = KeyValuePair.Create(key, value);
+            SetNewItemIndex(set, setOffset);
+        }
+
+        protected abstract void SetNewItemIndex(int set, int setOffset);
+
+        /// <summary>
+        /// Increment the count for the last cache item accessed, then sort the set based on all counts.
+        /// </summary>
+        /// <param name="set">The set in which the key is stored.</param>
+        /// <param name="setOffset">The offset into the set at which the key is stored.</param>
+        protected abstract void PromoteKey(int set, int setOffset);
+
+        /// <summary>
+        /// Set an item's count to zero (removal from cache, for example), then sort the set based on all counts.
+        /// </summary>
+        /// <param name="set">The set in which the key is stored.</param>
+        /// <param name="setOffset">The offset into the set at which the key is stored.</param>
+        protected abstract void DemoteKey(int set, int setOffset);
     }
 }
