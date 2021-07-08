@@ -8,10 +8,6 @@ namespace ParksComputing.SetAssociativeCache {
     /// </summary>
     /// <typeparam name="TKey">The type of keys in the cache.</typeparam>
     /// <typeparam name="TValue">The type of values in the cache.</typeparam>
-    /// <remarks>
-    /// There is still a lot of copied code between this class and <c>XruArrayCache</c>. I need to factor that 
-    /// out into <c>ArrayCacheImplBase</c> or some other appropriate intermediate class.
-    /// </remarks>
     public abstract class XfuArrayCache<TKey, TValue> : ArrayCacheImplBase<TKey, TValue> {
         /// <summary>
         /// Create a new <c>XfuArrayCache</c> instance.
