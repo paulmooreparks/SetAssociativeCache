@@ -9,7 +9,7 @@ namespace ParksComputing.SetAssociativeCache {
     /// </summary>
     /// <typeparam name="TKey">The type of keys in the cache.</typeparam>
     /// <typeparam name="TValue">The type of values in the cache.</typeparam>
-    public abstract class ArrayCacheImplBase<TKey, TValue> : ISetAssociativeCache<TKey, TValue> {
+    public abstract class CacheImplBase<TKey, TValue> : ISetAssociativeCache<TKey, TValue> {
 
         /* I'm being a very naughty object-oriented developer. By using fields instead of 
         properties, I've found that I can eliminate function calls from the release version 
@@ -28,7 +28,7 @@ namespace ParksComputing.SetAssociativeCache {
         /// </summary>
         /// <param name="sets">The number of sets into which the cache is divided.</param>
         /// <param name="ways">The number of storage slots in each set.</param>
-        public ArrayCacheImplBase(int sets, int ways) {
+        public CacheImplBase(int sets, int ways) {
             sets_ = sets;
             ways_ = ways;
             itemArray_ = new KeyValuePair<TKey, TValue>[Capacity];
@@ -397,13 +397,13 @@ namespace ParksComputing.SetAssociativeCache {
 
         [Serializable]
         private sealed class CacheEnumerator : IEnumerator<KeyValuePair<TKey, TValue>> {
-            ArrayCacheImplBase<TKey, TValue> cache_;
+            CacheImplBase<TKey, TValue> cache_;
             int version_;
             int count_;
             int index_;
             KeyValuePair<TKey, TValue> current_;
 
-            public CacheEnumerator(ArrayCacheImplBase<TKey,TValue> cache) {
+            public CacheEnumerator(CacheImplBase<TKey,TValue> cache) {
                 this.cache_ = cache;
                 this.version_ = cache.version_;
                 this.count_ = cache.Count;

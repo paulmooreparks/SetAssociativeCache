@@ -8,13 +8,13 @@ namespace ParksComputing.SetAssociativeCache {
     /// </summary>
     /// <typeparam name="TKey"></typeparam>
     /// <typeparam name="TValue"></typeparam>
-    public class LruArrayCache<TKey, TValue> : XruArrayCache<TKey, TValue> {
+    public class LruCache<TKey, TValue> : XruCache<TKey, TValue> {
         /// <summary>
         /// Create a new <c>LruArrayCache</c> instance.
         /// </summary>
         /// <param name="sets">The number of sets into which the cache is divided.</param>
         /// <param name="ways">The number of storage slots in each set.</param>
-        public LruArrayCache(int sets, int ways) : base(sets, ways) {
+        public LruCache(int sets, int ways) : base(sets, ways) {
         }
 
         /// <summary>

@@ -8,13 +8,13 @@ namespace ParksComputing.SetAssociativeCache {
     /// </summary>
     /// <typeparam name="TKey">The type of keys in the cache.</typeparam>
     /// <typeparam name="TValue">The type of values in the cache.</typeparam>
-    public abstract class XfuArrayCache<TKey, TValue> : ArrayCacheImplBase<TKey, TValue> {
+    public abstract class XfuCache<TKey, TValue> : CacheImplBase<TKey, TValue> {
         /// <summary>
         /// Create a new <c>XfuArrayCache</c> instance.
         /// </summary>
         /// <param name="sets">The number of sets into which the cache is divided.</param>
         /// <param name="ways">The number of storage slots in each set.</param>
-        public XfuArrayCache(int sets, int ways) : base(sets, ways) {
+        public XfuCache(int sets, int ways) : base(sets, ways) {
         }
 
         override protected void SetNewItemIndex(int set, int setOffset) {

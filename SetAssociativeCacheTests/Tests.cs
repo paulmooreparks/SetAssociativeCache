@@ -13,7 +13,7 @@ namespace SetAssociativeCacheTests {
 
         [Test]
         public void LruTest1() {
-            var cache = new LruArrayCache<int, int>(16, 4);
+            var cache = new LruCache<int, int>(16, 4);
             Assert.IsTrue(cache.Capacity == (16 * 4));
             Assert.IsTrue(cache.Count == 0);
             Assert.IsFalse(cache.TryGetValue(123, out int value));
@@ -21,7 +21,7 @@ namespace SetAssociativeCacheTests {
 
         [Test]
         public void LruTest2() {
-            var cache = new LruArrayCache<string, string>(6, 6);
+            var cache = new LruCache<string, string>(6, 6);
             Assert.IsTrue(cache.Capacity == (6 * 6));
             Assert.IsTrue(cache.Count == 0);
             Assert.IsFalse(cache.TryGetValue("abc", out string value));
@@ -29,7 +29,7 @@ namespace SetAssociativeCacheTests {
 
         [Test]
         public void LruTest3() {
-            var cache = new LruArrayCache<int, int>(4, 4);
+            var cache = new LruCache<int, int>(4, 4);
             cache.Add(38, 9);
             Assert.IsTrue(cache.Count == 1);
             cache.Add(34, 123);
@@ -43,7 +43,7 @@ namespace SetAssociativeCacheTests {
 
         [Test]
         public void LfuTest1() {
-            var cache = new LfuArrayCache<int, int>(16, 4);
+            var cache = new LfuCache<int, int>(16, 4);
             Assert.IsTrue(cache.Capacity == (16 * 4));
             Assert.IsTrue(cache.Count == 0);
             Assert.IsFalse(cache.TryGetValue(123, out int value));
@@ -51,7 +51,7 @@ namespace SetAssociativeCacheTests {
 
         [Test]
         public void LfuTest2() {
-            var cache = new LfuArrayCache<string, string>(6, 6);
+            var cache = new LfuCache<string, string>(6, 6);
             Assert.IsTrue(cache.Capacity == (6 * 6));
             Assert.IsTrue(cache.Count == 0);
             Assert.IsFalse(cache.TryGetValue("abc", out string value));
@@ -59,7 +59,7 @@ namespace SetAssociativeCacheTests {
 
         [Test]
         public void LfuTest3() {
-            var cache = new LfuArrayCache<int, int>(4, 4);
+            var cache = new LfuCache<int, int>(4, 4);
             cache.Add(38, 9);
             Assert.IsTrue(cache.Count == 1);
             cache.Add(34, 123);

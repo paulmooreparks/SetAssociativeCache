@@ -43,15 +43,15 @@ namespace SetAssociativeCacheSample {
                         
                         switch (replacementAlgoName) {
                         case "LRUReplacementAlgo":
-                            cache = new LruArrayCache<string, string>(setCount, setSize);
+                            cache = new LruCache<string, string>(setCount, setSize);
                             break;
 
                         case "LFUReplacementAlgo":
-                            cache = new LfuArrayCache<string, string>(setCount, setSize);
+                            cache = new LfuCache<string, string>(setCount, setSize);
                             break;
 
                         case "MRUReplacementAlgo":
-                            cache = new MruArrayCache<string, string>(setCount, setSize);
+                            cache = new MruCache<string, string>(setCount, setSize);
                             break;
 
                         default:
@@ -130,7 +130,7 @@ namespace SetAssociativeCacheSample {
             are tracked in an array rather than a linked list, in order to keep it CPU-cache friendly. 
             If we decide later that a least-frequently used cache (LFU) cache is more appropriate, we can 
             change LruArrayCache to LfuArrayCache. We could also add new classes with other implementations. */
-            var coupleCache = new LruArrayCache<string, string>(1, 500);
+            var coupleCache = new LruCache<string, string>(1, 500);
 
             Console.WriteLine($"There is room for {coupleCache.Capacity} couples. Let the games begin....");
 

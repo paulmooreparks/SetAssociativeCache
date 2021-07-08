@@ -8,13 +8,13 @@ namespace ParksComputing.SetAssociativeCache {
     /// </summary>
     /// <typeparam name="TKey"></typeparam>
     /// <typeparam name="TValue"></typeparam>
-    public class LfuArrayCache<TKey, TValue> : XfuArrayCache<TKey, TValue> {
+    public class LfuCache<TKey, TValue> : XfuCache<TKey, TValue> {
         /// <summary>
         /// Create a new <c>LfuArrayCache</c> instance.
         /// </summary>
         /// <param name="sets">The number of sets into which the cache is divided.</param>
         /// <param name="ways">The number of storage slots in each set.</param>
-        public LfuArrayCache(int sets, int ways) : base(sets, ways) {
+        public LfuCache(int sets, int ways) : base(sets, ways) {
             Clear();
         }
 
