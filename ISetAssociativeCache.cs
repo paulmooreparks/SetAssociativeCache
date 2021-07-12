@@ -71,6 +71,16 @@ namespace ParksComputing.SetAssociativeCache {
         int Ways { get; }
 
         /// <summary>
+        /// If the given <paramref name="key"/> would cause an existing key to be evicted, return <c>true</c> and set 
+        /// <paramref name="evictKey"/> to the key of the item that would be evicted if the new <paramref name="key"/> 
+        /// were added.
+        /// </summary>
+        /// <param name="key">Key to test.</param>
+        /// <param name="evictKey">Key of cache item that would be evicted, or default key value if return is false.</param>
+        /// <returns><c>true</c> if a key would be evicted; <c>false</c> otherwise.</returns>
+        bool TryGetEvictKey(TKey key, out TKey evictKey);
+
+        /// <summary>
         /// Adds an element with the provided key and value to the ParksComputing.ISetAssociativeCache.
         /// </summary>
         /// <param name="key">The object to use as the key of the element to add.</param>

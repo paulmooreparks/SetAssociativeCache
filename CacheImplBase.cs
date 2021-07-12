@@ -521,5 +521,46 @@ namespace ParksComputing.SetAssociativeCache {
         /// <param name="set">The set in which the key is stored.</param>
         /// <param name="setOffset">The offset into the set at which the key is stored.</param>
         protected abstract void DemoteKey(int set, int setOffset);
+
+        /// <summary>
+        /// If the given <paramref name="key"/> would cause an existing key to be evicted, return <c>true</c> and set 
+        /// <paramref name="evictKey"/> to the key of the item that would be evicted if the new <paramref name="key"/> 
+        /// were added.
+        /// </summary>
+        /// <param name="key">Key to test.</param>
+        /// <param name="evictKey">Key of cache item that would be evicted, or default key value if return is false.</param>
+        /// <returns><c>true</c> if a key would be evicted; <c>false</c> otherwise.</returns>
+        public bool TryGetEvictKey(TKey key, out TKey evictKey) {
+            evictKey = default(TKey);
+
+            if (key == null) {
+                throw new ArgumentNullException("key");
+            }
+
+            var set = FindSet(key);
+            var setBegin = set * ways_;
+            int setOffset;
+            int offsetIndex;
+            int itemIndex;
+
+            for (setOffset = 0, offsetIndex = setBegin; setOffset < ways_; ++setOffset, ++offsetIndex) {
+                itemIndex = indexArray_[offsetIndex].Key;
+
+                if (itemIndex == int.MaxValue) {
+                    return false;
+                }
+
+                if (itemArray_[itemIndex].Key.Equals(key)) {
+                    return false;
+                }
+            }
+
+            setOffset = ReplacementOffset;
+            offsetIndex = setBegin + setOffset;
+            itemIndex = indexArray_[offsetIndex].Key;
+            evictKey = itemArray_[itemIndex].Key;
+            return true;
+        }
+
     }
 }
