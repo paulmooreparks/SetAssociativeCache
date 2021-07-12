@@ -140,6 +140,10 @@ namespace SetAssociativeCacheTests {
             cache["Eggs"] = "Ham";
             //Set, Sam, Iam
             cache["Sam"] = "Iam";
+
+            Assert.IsTrue(cache.TryGetEvictKey("Green", out string evictKey));
+            Assert.IsTrue(evictKey.Equals("Sam"));
+
             //Set, Green, EggsAndHam
             cache["Green"] = "EggsAndHam";
 
