@@ -19,12 +19,28 @@ namespace ParksComputing.SetAssociativeCache {
         protected int sets_; // Number of sets in the cache
         protected int ways_; // Capacity of each set in the cache
         protected int version_; // Increments each time an element is added or removed, to invalidate enumerators.
-        /* TKey is index into ItemArray; TValue is interpreted by the eviction policy of the derived class. */
+
+        /* There are two arrays of key/value pairs which are used to track and store the actual cache items. */
+
+        /* keyArray_ stores the indices of the actual cache items stored in the value array. Each 
+        item in the array is a key/value pair of two integers. The first integer is an index into 
+        the value array. The second index is interpreted by the derived class that implements a 
+        specific eviction policy. This array is sorted/rearranged/whatever according to the needs 
+        of the cache policy, since it's faster to move integer pairs around, and they're close 
+        together in the CPU cache. */
         protected KeyValuePair<int, int>[] keyArray_;
-        protected KeyValuePair<TKey, TValue>[] valueArray_; // Key/value pairs stored in the cache
+
+        /* valueArray_ stores the key/value pairs of the actual cache items. Once an item is placed 
+        at an index in this array, it stays there unless it is replaced with a new key/value pair or 
+        copied out to the client of the cache. Otherwise, these data aren't rearranged or otherwise 
+        messed with. */
+        protected KeyValuePair<TKey, TValue>[] valueArray_;
+
+        /* This value is used as a sentinel to mark empty slots in the key array. */
+        protected const int EMPTY_MARKER = int.MaxValue;
 
         /// <summary>
-        /// Create a new <c>ArrayCacheImplBase</c> instance.
+        /// Create a new <c>CacheImplBase</c> instance.
         /// </summary>
         /// <param name="sets">The number of sets into which the cache is divided.</param>
         /// <param name="ways">The number of storage slots in each set.</param>
@@ -90,8 +106,15 @@ namespace ParksComputing.SetAssociativeCache {
             get {
                 int value = 0;
 
+                /* Loop over the key array and count the items which aren't marked with a 
+                sentinel value for "empty slot". This is "slower" than keeping track of the 
+                count as items are added or removed, but: 
+                a.) it's really, really fast to loop over a small array like this (cache 
+                    locality is the whole idea, remember?)
+                b.) this keeps us from slowing down and complicating the important code 
+                    paths with the bookkeeping code necessary to maintain the count. */
                 foreach (var keyIndex in keyArray_) {
-                    if (keyIndex.Key != int.MaxValue) {
+                    if (keyIndex.Key != EMPTY_MARKER) {
                         ++value;
                     }
                 }
@@ -103,6 +126,10 @@ namespace ParksComputing.SetAssociativeCache {
         /// <summary>
         /// The offset into the set for the item which should be evicted from the cache.
         /// </summary>
+        /// <remarks>
+        /// This is implemented in the derived class that actually defines and implements 
+        /// the cache policy.
+        /// </remarks>
         protected abstract int ReplacementOffset { get; }
 
         /// <summary>
@@ -132,7 +159,7 @@ namespace ParksComputing.SetAssociativeCache {
                 valueIndex = keyArray_[keyIndex].Key;
 
                 /* If the index is a sentinel value for "nothing stored here"... */
-                if (valueIndex == int.MaxValue) {
+                if (valueIndex == EMPTY_MARKER) {
                     /* When the slots in a set are being filled initially, the index of each empty spot in the set in 
                     the key index corresponds to the index of the empty spot in the set in the value index. Therefore, 
                     we set the value index to the current key index. */
@@ -197,7 +224,7 @@ namespace ParksComputing.SetAssociativeCache {
             for (int setOffset = 0, keyIndex = setBegin; setOffset < ways_; ++setOffset, ++keyIndex) {
                 int valueIndex = keyArray_[keyIndex].Key;
 
-                if (valueIndex != int.MaxValue &&
+                if (valueIndex != EMPTY_MARKER &&
                     valueArray_[valueIndex].Key.Equals(key)) {
                     PromoteKey(set, setOffset);
                     return true;
@@ -216,10 +243,11 @@ namespace ParksComputing.SetAssociativeCache {
             var set = FindSet(item.Key);
             var setBegin = set * ways_;
 
+            /* Loop over the set, incrementing both the set offset (setOffset) and the key-array index (keyIndex) */
             for (int setOffset = 0, keyIndex = setBegin; setOffset < ways_; ++setOffset, ++keyIndex) {
                 int valueIndex = keyArray_[keyIndex].Key;
 
-                if (valueIndex != int.MaxValue &&
+                if (valueIndex != EMPTY_MARKER &&
                     valueArray_[valueIndex].Key.Equals(item.Key) &&
                     valueArray_[valueIndex].Value.Equals(item.Value)) {
                     PromoteKey(set, setOffset);
@@ -252,10 +280,11 @@ namespace ParksComputing.SetAssociativeCache {
             var set = FindSet(key);
             var setBegin = set * ways_;
 
+            /* Loop over the set, incrementing both the set offset (setOffset) and the key-array index (keyIndex) */
             for (int setOffset = 0, keyIndex = setBegin; setOffset < ways_; ++setOffset, ++keyIndex) {
                 int valueIndex = keyArray_[keyIndex].Key;
 
-                if (valueIndex != int.MaxValue && valueArray_[valueIndex].Key.Equals(key)) {
+                if (valueIndex != EMPTY_MARKER && valueArray_[valueIndex].Key.Equals(key)) {
                     PromoteKey(set, setOffset);
                     value = valueArray_[valueIndex].Value;
                     return true;
@@ -282,16 +311,17 @@ namespace ParksComputing.SetAssociativeCache {
             var set = FindSet(key);
             var setBegin = set * ways_;
 
+            /* Loop over the set, incrementing both the set offset (setOffset) and the key-array index (keyIndex) */
             for (int setOffset = 0, keyIndex = setBegin; setOffset < ways_; ++setOffset, ++keyIndex) {
                 int valueIndex = keyArray_[keyIndex].Key;
 
-                if (valueIndex != int.MaxValue && valueArray_[valueIndex].Key.Equals(key)) {
+                if (valueIndex != EMPTY_MARKER && valueArray_[valueIndex].Key.Equals(key)) {
                     /* Since all access to the cache values goes through the index array first, 
                     I'll try leaving the value in the cache and see how that goes. It's faster, 
                     but for some reason it make me nervous. I suppose I could make value replacement 
                     a feature of the policy class. */
                     ++version_;
-                    keyArray_[keyIndex] = KeyValuePair.Create(int.MaxValue, keyArray_[keyIndex].Value);
+                    keyArray_[keyIndex] = KeyValuePair.Create(EMPTY_MARKER, keyArray_[keyIndex].Value);
                     DemoteKey(set, setOffset);
                     return true;
                 }
@@ -312,10 +342,11 @@ namespace ParksComputing.SetAssociativeCache {
             var set = FindSet(item.Key);
             var setBegin = set * ways_;
 
+            /* Loop over the set, incrementing both the set offset (setOffset) and the key-array index (keyIndex) */
             for (int setOffset = 0, keyIndex = setBegin; setOffset < ways_; ++setOffset, ++keyIndex) {
                 int valueIndex = keyArray_[keyIndex].Key;
 
-                if (valueIndex != int.MaxValue &&
+                if (valueIndex != EMPTY_MARKER &&
                     valueArray_[valueIndex].Key.Equals(item.Key) &&
                     valueArray_[valueIndex].Value.Equals(item.Value)) {
                     /* Since all access to the cache values goes through the index array first, 
@@ -323,7 +354,7 @@ namespace ParksComputing.SetAssociativeCache {
                     but for some reason it make me nervous. I suppose I could make value replacement 
                     a feature of the policy class. */
                     ++version_;
-                    keyArray_[keyIndex] = KeyValuePair.Create(int.MaxValue, keyArray_[keyIndex].Value);
+                    keyArray_[keyIndex] = KeyValuePair.Create(EMPTY_MARKER, keyArray_[keyIndex].Value);
                     DemoteKey(set, setOffset);
                     return true;
                 }
@@ -343,7 +374,7 @@ namespace ParksComputing.SetAssociativeCache {
                 List<TKey> value = new();
 
                 foreach (var valueIndex in keyArray_) {
-                    if (valueIndex.Key != int.MaxValue) {
+                    if (valueIndex.Key != EMPTY_MARKER) {
                         value.Add(valueArray_[valueIndex.Key].Key);
                     }
                 }
@@ -363,7 +394,7 @@ namespace ParksComputing.SetAssociativeCache {
                 List<TValue> value = new();
 
                 foreach (var valueIndex in keyArray_) {
-                    if (valueIndex.Key != int.MaxValue) {
+                    if (valueIndex.Key != EMPTY_MARKER) {
                         value.Add(valueArray_[valueIndex.Key].Value);
                     }
                 }
@@ -399,7 +430,7 @@ namespace ParksComputing.SetAssociativeCache {
             }
 
             foreach (KeyValuePair<int, int> keyArrayItem in keyArray_) {
-                if (keyArrayItem.Key != int.MaxValue) {
+                if (keyArrayItem.Key != EMPTY_MARKER) {
                     array[arrayIndex] = KeyValuePair.Create(valueArray_[keyArrayItem.Key].Key, valueArray_[keyArrayItem.Key].Value);
                     ++arrayIndex;
                 }
@@ -496,7 +527,7 @@ namespace ParksComputing.SetAssociativeCache {
             to the data. With no indices, the data aren't accessible. */
             ++version_;
             keyArray_ = new KeyValuePair<int, int>[Capacity];
-            Array.Fill(keyArray_, KeyValuePair.Create(int.MaxValue, 0));
+            Array.Fill(keyArray_, KeyValuePair.Create(EMPTY_MARKER, 0));
         }
 
         /// <summary>
@@ -567,7 +598,7 @@ namespace ParksComputing.SetAssociativeCache {
             for (setOffset = 0, keyIndex = setBegin; setOffset < ways_; ++setOffset, ++keyIndex) {
                 valueIndex = keyArray_[keyIndex].Key;
 
-                if (valueIndex == int.MaxValue) {
+                if (valueIndex == EMPTY_MARKER) {
                     return false;
                 }
 
