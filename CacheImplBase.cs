@@ -11,6 +11,9 @@ namespace ParksComputing.SetAssociativeCache {
     /// <typeparam name="TValue">The type of values in the cache.</typeparam>
     /// <remarks>
     /// THIS CLASS IS NOT THREAD SAFE! Thread-safe access is the reponsibility of the client.
+    /// You will notice that I copy a lot of the code that walks through a set looking for 
+    /// keys. I tried abstracting this with an enumerator using yield return, and the code took 
+    /// four times longer to run.
     /// </remarks>
     public abstract class CacheImplBase<TKey, TValue> : ISetAssociativeCache<TKey, TValue> {
 
