@@ -17,6 +17,12 @@ namespace ParksComputing.SetAssociativeCache {
         public XruCache(int sets, int ways) : base(sets, ways) {
         }
 
+        /// <summary>
+        /// Update the key array with the index into the value array and adjust the key array as 
+        /// necessary according to the details of the cache policy.
+        /// </summary>
+        /// <param name="set">Which set to update.</param>
+        /// <param name="setOffset">The offset into the set to update.</param>
         override protected void SetNewItemIndex(int set, int setOffset) {
             PromoteKey(set, setOffset);
         }

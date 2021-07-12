@@ -9,6 +9,9 @@ namespace ParksComputing.SetAssociativeCache {
     /// </summary>
     /// <typeparam name="TKey">The type of keys in the cache.</typeparam>
     /// <typeparam name="TValue">The type of values in the cache.</typeparam>
+    /// <remarks>
+    /// THIS CLASS IS NOT THREAD SAFE! Thread-safe access is the reponsibility of the client.
+    /// </remarks>
     public abstract class CacheImplBase<TKey, TValue> : ISetAssociativeCache<TKey, TValue> {
 
         /* I'm being a very naughty object-oriented developer. By using fields instead of 
@@ -224,8 +227,10 @@ namespace ParksComputing.SetAssociativeCache {
             for (int setOffset = 0, keyIndex = setBegin; setOffset < ways_; ++setOffset, ++keyIndex) {
                 int valueIndex = keyArray_[keyIndex].Key;
 
+                /* If the key is found in the value array... */
                 if (valueIndex != EMPTY_MARKER &&
                     valueArray_[valueIndex].Key.Equals(key)) {
+                    /* "Touch" the key to note that it has been accessed. */
                     PromoteKey(set, setOffset);
                     return true;
                 }
@@ -247,9 +252,11 @@ namespace ParksComputing.SetAssociativeCache {
             for (int setOffset = 0, keyIndex = setBegin; setOffset < ways_; ++setOffset, ++keyIndex) {
                 int valueIndex = keyArray_[keyIndex].Key;
 
+                /* If the key is found in the value array, and the value at that key matches the provided value... */
                 if (valueIndex != EMPTY_MARKER &&
                     valueArray_[valueIndex].Key.Equals(item.Key) &&
                     valueArray_[valueIndex].Value.Equals(item.Value)) {
+                    /* "Touch" the key to note that it has been accessed. */
                     PromoteKey(set, setOffset);
                     return true;
                 }
@@ -284,8 +291,11 @@ namespace ParksComputing.SetAssociativeCache {
             for (int setOffset = 0, keyIndex = setBegin; setOffset < ways_; ++setOffset, ++keyIndex) {
                 int valueIndex = keyArray_[keyIndex].Key;
 
+                /* If the key is found in the value array... */
                 if (valueIndex != EMPTY_MARKER && valueArray_[valueIndex].Key.Equals(key)) {
+                    /* "Touch" the key to note that it has been accessed. */
                     PromoteKey(set, setOffset);
+                    /* Return the value found at this location in the value array. */
                     value = valueArray_[valueIndex].Value;
                     return true;
                 }
@@ -320,7 +330,10 @@ namespace ParksComputing.SetAssociativeCache {
                     I'll try leaving the value in the cache and see how that goes. It's faster, 
                     but for some reason it make me nervous. I suppose I could make value replacement 
                     a feature of the policy class. */
+
+                    /* Invalidate any outstanding interators. */
                     ++version_;
+                    /* Mark this location in the key array as available. */
                     keyArray_[keyIndex] = KeyValuePair.Create(EMPTY_MARKER, keyArray_[keyIndex].Value);
                     DemoteKey(set, setOffset);
                     return true;
@@ -353,6 +366,8 @@ namespace ParksComputing.SetAssociativeCache {
                     I'll try leaving the value in the cache and see how that goes. It's faster, 
                     but for some reason it make me nervous. I suppose I could make value replacement 
                     a feature of the policy class. */
+
+                    /* Invalidate any outstanding interators. */
                     ++version_;
                     keyArray_[keyIndex] = KeyValuePair.Create(EMPTY_MARKER, keyArray_[keyIndex].Value);
                     DemoteKey(set, setOffset);
@@ -447,6 +462,10 @@ namespace ParksComputing.SetAssociativeCache {
             return new CacheEnumerator(this);
         }
 
+        /// <summary>
+        /// Emumerator class used to support calling foreach (or equivalent iteration structures) 
+        /// on values in this container.
+        /// </summary>
         [Serializable]
         private sealed class CacheEnumerator : IEnumerator<KeyValuePair<TKey, TValue>> {
             CacheImplBase<TKey, TValue> cache_;
@@ -462,7 +481,7 @@ namespace ParksComputing.SetAssociativeCache {
                 Reset();
             }
 
-            public KeyValuePair<TKey, TValue> Current { get => current_; }
+            public KeyValuePair<TKey, TValue> Current => current_;
             
             object IEnumerator.Current { 
                 get {
@@ -524,8 +543,13 @@ namespace ParksComputing.SetAssociativeCache {
         /// </summary>
         public virtual void Clear() {
             /* Keep in mind that the data aren't cleared. We are clearing the indices which point 
-            to the data. With no indices, the data aren't accessible. */
+            to the data. With no indices, the data aren't accessible. If you're storing secure 
+            data in the cache... well, just don't. If you must, then you'll need to change this. */
+
+            /* Invalidate any outstanding interators. */
             ++version_;
+
+            /* Wipe the key array. */
             keyArray_ = new KeyValuePair<int, int>[Capacity];
             Array.Fill(keyArray_, KeyValuePair.Create(EMPTY_MARKER, 0));
         }
@@ -553,11 +577,22 @@ namespace ParksComputing.SetAssociativeCache {
         /// <param name="setOffset">The offset into the set at which to add the element.</param>
         /// <param name="valueIndex">The index into the item array at which the element is stored.</param>
         protected void Add(TKey key, TValue value, int set, int setOffset, int valueIndex) {
+            /* Invalidate any outstanding interators. */
             ++version_;
+            /* Store the key/value pair at the designated location in the value array. */
             valueArray_[valueIndex] = KeyValuePair.Create(key, value);
+
+            /* Update the key array with the index into the value array and adjust the key array as 
+            necessary according to the details of the cache policy. */
             SetNewItemIndex(set, setOffset);
         }
 
+        /// <summary>
+        /// Update the key array with the index into the value array and adjust the key array as 
+        /// necessary according to the details of the cache policy.
+        /// </summary>
+        /// <param name="set">Which set to update.</param>
+        /// <param name="setOffset">The offset into the set to update.</param>
         protected abstract void SetNewItemIndex(int set, int setOffset);
 
         /// <summary>
@@ -595,18 +630,24 @@ namespace ParksComputing.SetAssociativeCache {
             int keyIndex;
             int valueIndex;
 
+            /* Loop over the set, incrementing both the set offset (setOffset) and the key-array index (keyIndex) */
             for (setOffset = 0, keyIndex = setBegin; setOffset < ways_; ++setOffset, ++keyIndex) {
                 valueIndex = keyArray_[keyIndex].Key;
 
+                /* If the slot is empty, no eviction. */
                 if (valueIndex == EMPTY_MARKER) {
                     return false;
                 }
 
+                /* If the key is found, no eviction. */
                 if (valueArray_[valueIndex].Key.Equals(key)) {
                     return false;
                 }
             }
 
+            /* If we get here, the set is full and adding the key would cause an eviction. Report 
+            the key that would be evicted by this replacement, according to the policy of the 
+            derived class. */
             setOffset = ReplacementOffset;
             keyIndex = setBegin + setOffset;
             valueIndex = keyArray_[keyIndex].Key;
