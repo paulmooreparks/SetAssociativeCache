@@ -149,6 +149,7 @@ namespace ParksComputing.SetAssociativeCache {
 
             /* Get the number of the set that would contain the new key. */
             var set = FindSet(key);
+
             /* Get the first array index for the set; in other words, where in the array does the set start? */
             var setBegin = set * ways_; 
 
