@@ -29,11 +29,11 @@ namespace ParksComputing.SetAssociativeCache {
         protected override void PromoteKey(int set, int setOffset) {
             int headIndex = set * ways_;
             int keyIndex = headIndex + setOffset;
-            int newHeadItemKey = indexArray_[keyIndex].Key;
-            int newHeadItemValue = indexArray_[keyIndex].Value;
+            int newHeadItemKey = keyArray_[keyIndex].Key;
+            int newHeadItemValue = keyArray_[keyIndex].Value;
 
-            System.Array.Copy(indexArray_, headIndex, indexArray_, headIndex + 1, setOffset);
-            indexArray_[headIndex] = KeyValuePair.Create(newHeadItemKey, newHeadItemValue);
+            System.Array.Copy(keyArray_, headIndex, keyArray_, headIndex + 1, setOffset);
+            keyArray_[headIndex] = KeyValuePair.Create(newHeadItemKey, newHeadItemValue);
         }
 
         /// <summary>
@@ -46,11 +46,11 @@ namespace ParksComputing.SetAssociativeCache {
             int keyIndex = headIndex + setOffset;
             int tailIndex = headIndex + ways_ - 1;
             int count = ways_ - setOffset - 1;
-            int newTailItemKey = indexArray_[keyIndex].Key;
-            int newTailItemValue = indexArray_[keyIndex].Value;
+            int newTailItemKey = keyArray_[keyIndex].Key;
+            int newTailItemValue = keyArray_[keyIndex].Value;
 
-            System.Array.Copy(indexArray_, keyIndex + 1, indexArray_, keyIndex, count);
-            indexArray_[tailIndex] = KeyValuePair.Create(newTailItemKey, newTailItemValue);
+            System.Array.Copy(keyArray_, keyIndex + 1, keyArray_, keyIndex, count);
+            keyArray_[tailIndex] = KeyValuePair.Create(newTailItemKey, newTailItemValue);
         }
     }
 }

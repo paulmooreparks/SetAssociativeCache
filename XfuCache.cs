@@ -20,12 +20,12 @@ namespace ParksComputing.SetAssociativeCache {
         override protected void SetNewItemIndex(int set, int setOffset) {
             int headIndex = set * ways_;
             int keyIndex = headIndex + setOffset;
-            var newHeadItem = KeyValuePair.Create(indexArray_[keyIndex].Key, 1);
+            var newHeadItem = KeyValuePair.Create(keyArray_[keyIndex].Key, 1);
 
             /* The new index gets sorted to the front, but with a count of 1. A newly-cached item 
             should not be immediately evicted, so it's safe until pushed down by other new items. */
-            System.Array.Copy(indexArray_, headIndex, indexArray_, headIndex + 1, setOffset);
-            indexArray_[headIndex] = newHeadItem;
+            System.Array.Copy(keyArray_, headIndex, keyArray_, headIndex + 1, setOffset);
+            keyArray_[headIndex] = newHeadItem;
         }
 
         /// <summary>
@@ -36,11 +36,11 @@ namespace ParksComputing.SetAssociativeCache {
         protected override void PromoteKey(int set, int setOffset) {
             int headIndex = set * ways_;
             int keyIndex = headIndex + setOffset;
-            int newHeadItemKey = indexArray_[keyIndex].Key;
-            int newHeadItemValue = indexArray_[keyIndex].Value + 1;
-            indexArray_[keyIndex] = KeyValuePair.Create(newHeadItemKey, newHeadItemValue);
+            int newHeadItemKey = keyArray_[keyIndex].Key;
+            int newHeadItemValue = keyArray_[keyIndex].Value + 1;
+            keyArray_[keyIndex] = KeyValuePair.Create(newHeadItemKey, newHeadItemValue);
 
-            Array.Sort(indexArray_, headIndex, ways_, lfuComparer_);
+            Array.Sort(keyArray_, headIndex, ways_, lfuComparer_);
         }
 
         /// <summary>
@@ -51,11 +51,11 @@ namespace ParksComputing.SetAssociativeCache {
         protected override void DemoteKey(int set, int setOffset) {
             int headIndex = set * ways_;
             int keyIndex = headIndex + setOffset;
-            int newTailItemKey = indexArray_[keyIndex].Key;
+            int newTailItemKey = keyArray_[keyIndex].Key;
             int newTailItemValue = 0;
-            indexArray_[keyIndex] = KeyValuePair.Create(newTailItemKey, newTailItemValue);
+            keyArray_[keyIndex] = KeyValuePair.Create(newTailItemKey, newTailItemValue);
 
-            Array.Sort(indexArray_, headIndex, ways_, lfuComparer_);
+            Array.Sort(keyArray_, headIndex, ways_, lfuComparer_);
         }
 
         /* Comparer object used to sort items in indexArray in LFU order. */

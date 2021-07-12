@@ -20,8 +20,8 @@ namespace ParksComputing.SetAssociativeCache {
         protected int ways_; // Capacity of each set in the cache
         protected int version_; // Increments each time an element is added or removed, to invalidate enumerators.
         /* TKey is index into ItemArray; TValue is interpreted by the eviction policy of the derived class. */
-        protected KeyValuePair<int, int>[] indexArray_;
-        protected KeyValuePair<TKey, TValue>[] itemArray_; // Key/value pairs stored in the cache
+        protected KeyValuePair<int, int>[] keyArray_;
+        protected KeyValuePair<TKey, TValue>[] valueArray_; // Key/value pairs stored in the cache
 
         /// <summary>
         /// Create a new <c>ArrayCacheImplBase</c> instance.
@@ -31,7 +31,7 @@ namespace ParksComputing.SetAssociativeCache {
         public CacheImplBase(int sets, int ways) {
             sets_ = sets;
             ways_ = ways;
-            itemArray_ = new KeyValuePair<TKey, TValue>[Capacity];
+            valueArray_ = new KeyValuePair<TKey, TValue>[Capacity];
             Clear();
         }
 
@@ -90,8 +90,8 @@ namespace ParksComputing.SetAssociativeCache {
             get {
                 int value = 0;
 
-                foreach (var itemIndex in indexArray_) {
-                    if (itemIndex.Key != int.MaxValue) {
+                foreach (var keyIndex in keyArray_) {
+                    if (keyIndex.Key != int.MaxValue) {
                         ++value;
                     }
                 }
@@ -114,38 +114,58 @@ namespace ParksComputing.SetAssociativeCache {
         /// <exception cref="System.ArgumentNullException"><paramref name="key"/> is null.</exception>
         public virtual void Add(TKey key, TValue value) {
             if (key == null) {
-                throw new ArgumentNullException("key");
+                throw new ArgumentNullException(nameof(key));
             }
 
+            /* Get the number of the set that would contain the new key. */
             var set = FindSet(key);
-            var setBegin = set * ways_;
-            int setOffset;
-            int offsetIndex;
-            int itemIndex;
+            /* Get the first array index for the set; in other words, where in the array does the set start? */
+            var setBegin = set * ways_; 
 
-            for (setOffset = 0, offsetIndex = setBegin; setOffset < ways_; ++setOffset, ++offsetIndex) {
-                itemIndex = indexArray_[offsetIndex].Key;
+            int setOffset; // Offset into the set in the index array for where the key is stored
+            int keyIndex; // Actual array location in the key array for setOffset
+            int valueIndex; // Index into the value array where the actual cache item (key/value pair) is stored
 
-                if (itemIndex == int.MaxValue) {
-                    itemIndex = offsetIndex;
-                    indexArray_[offsetIndex] = KeyValuePair.Create(itemIndex, indexArray_[offsetIndex].Value);
-                    Add(key, value, set, setOffset, itemIndex);
+            /* Loop over the set, incrementing both the set offset (setOffset) and the key-array index (keyIndex) */
+            for (setOffset = 0, keyIndex = setBegin; setOffset < ways_; ++setOffset, ++keyIndex) {
+                /* Get the index into the value array */
+                valueIndex = keyArray_[keyIndex].Key;
+
+                /* If the index is a sentinel value for "nothing stored here"... */
+                if (valueIndex == int.MaxValue) {
+                    /* When the slots in a set are being filled initially, the index of each empty spot in the set in 
+                    the key index corresponds to the index of the empty spot in the set in the value index. Therefore, 
+                    we set the value index to the current key index. */
+                    valueIndex = keyIndex;
+                    /* Create a new entry in the key array. */
+                    keyArray_[keyIndex] = KeyValuePair.Create(valueIndex, keyArray_[keyIndex].Value);
+                    /* Delegate adding the cache item and managing the data for the cache policy to the Add method. */
+                    Add(key, value, set, setOffset, valueIndex);
                     return;
                 }
 
-                if (itemArray_[itemIndex].Key.Equals(key)) {
-                    itemIndex = indexArray_[offsetIndex].Key;
-                    Add(key, value, set, setOffset, itemIndex);
+                /* If the new key is equal to the key at the current position... */
+                if (valueArray_[valueIndex].Key.Equals(key)) {
+                    /* We'll replace the value in the item array with this value. */
+                    valueIndex = keyArray_[keyIndex].Key;
+                    /* Delegate adding the cache item and managing the data for the cache policy to the Add method. */
+                    Add(key, value, set, setOffset, valueIndex);
                     return;
                 }
             }
 
             /* If we get here, then the set is full. Evict the appropriate element depending on 
             policy, then add the new value at that offset. */
+
+            /* The ReplacementOffset property gives us the offset into the set for the key that will be evicted. */
             setOffset = ReplacementOffset;
-            offsetIndex = setBegin + setOffset;
-            itemIndex = indexArray_[offsetIndex].Key;
-            Add(key, value, set, setOffset, itemIndex);
+
+            /* Convert setOffset into an actual index into the key array */
+            keyIndex = setBegin + setOffset;
+            /* Get the index into the value array for where the evicted cache item is stored. */
+            valueIndex = keyArray_[keyIndex].Key;
+            /* Delegate adding the cache item and managing the data for the cache policy to the Add method. */
+            Add(key, value, set, setOffset, valueIndex);
             return;
         }
 
@@ -167,17 +187,18 @@ namespace ParksComputing.SetAssociativeCache {
         /// <exception cref="System.ArgumentNullException">key is null.</exception>
         public virtual bool ContainsKey(TKey key) {
             if (key == null) {
-                throw new ArgumentNullException("key");
+                throw new ArgumentNullException(nameof(key));
             }
 
             var set = FindSet(key);
             var setBegin = set * ways_;
 
-            for (int setOffset = 0, offsetIndex = setBegin; setOffset < ways_; ++setOffset, ++offsetIndex) {
-                int itemIndex = indexArray_[offsetIndex].Key;
+            /* Loop over the set, incrementing both the set offset (setOffset) and the key-array index (keyIndex) */
+            for (int setOffset = 0, keyIndex = setBegin; setOffset < ways_; ++setOffset, ++keyIndex) {
+                int valueIndex = keyArray_[keyIndex].Key;
 
-                if (itemIndex != int.MaxValue &&
-                    itemArray_[itemIndex].Key.Equals(key)) {
+                if (valueIndex != int.MaxValue &&
+                    valueArray_[valueIndex].Key.Equals(key)) {
                     PromoteKey(set, setOffset);
                     return true;
                 }
@@ -195,12 +216,12 @@ namespace ParksComputing.SetAssociativeCache {
             var set = FindSet(item.Key);
             var setBegin = set * ways_;
 
-            for (int setOffset = 0, offsetIndex = setBegin; setOffset < ways_; ++setOffset, ++offsetIndex) {
-                int itemIndex = indexArray_[offsetIndex].Key;
+            for (int setOffset = 0, keyIndex = setBegin; setOffset < ways_; ++setOffset, ++keyIndex) {
+                int valueIndex = keyArray_[keyIndex].Key;
 
-                if (itemIndex != int.MaxValue &&
-                    itemArray_[itemIndex].Key.Equals(item.Key) &&
-                    itemArray_[itemIndex].Value.Equals(item.Value)) {
+                if (valueIndex != int.MaxValue &&
+                    valueArray_[valueIndex].Key.Equals(item.Key) &&
+                    valueArray_[valueIndex].Value.Equals(item.Value)) {
                     PromoteKey(set, setOffset);
                     return true;
                 }
@@ -225,18 +246,18 @@ namespace ParksComputing.SetAssociativeCache {
         /// <exception cref="System.ArgumentNullException">key is null.</exception>
         public virtual bool TryGetValue(TKey key, [MaybeNullWhen(false)] out TValue value) {
             if (key == null) {
-                throw new ArgumentNullException("key");
+                throw new ArgumentNullException(nameof(key));
             }
 
             var set = FindSet(key);
             var setBegin = set * ways_;
 
-            for (int setOffset = 0, offsetIndex = setBegin; setOffset < ways_; ++setOffset, ++offsetIndex) {
-                int itemIndex = indexArray_[offsetIndex].Key;
+            for (int setOffset = 0, keyIndex = setBegin; setOffset < ways_; ++setOffset, ++keyIndex) {
+                int valueIndex = keyArray_[keyIndex].Key;
 
-                if (itemIndex != int.MaxValue && itemArray_[itemIndex].Key.Equals(key)) {
+                if (valueIndex != int.MaxValue && valueArray_[valueIndex].Key.Equals(key)) {
                     PromoteKey(set, setOffset);
-                    value = itemArray_[itemIndex].Value;
+                    value = valueArray_[valueIndex].Value;
                     return true;
                 }
             }
@@ -255,22 +276,22 @@ namespace ParksComputing.SetAssociativeCache {
         /// </returns>
         public virtual bool Remove(TKey key) {
             if (key == null) {
-                throw new ArgumentNullException("key");
+                throw new ArgumentNullException(nameof(key));
             }
 
             var set = FindSet(key);
             var setBegin = set * ways_;
 
-            for (int setOffset = 0, offsetIndex = setBegin; setOffset < ways_; ++setOffset, ++offsetIndex) {
-                int itemIndex = indexArray_[offsetIndex].Key;
+            for (int setOffset = 0, keyIndex = setBegin; setOffset < ways_; ++setOffset, ++keyIndex) {
+                int valueIndex = keyArray_[keyIndex].Key;
 
-                if (itemIndex != int.MaxValue && itemArray_[itemIndex].Key.Equals(key)) {
+                if (valueIndex != int.MaxValue && valueArray_[valueIndex].Key.Equals(key)) {
                     /* Since all access to the cache values goes through the index array first, 
                     I'll try leaving the value in the cache and see how that goes. It's faster, 
                     but for some reason it make me nervous. I suppose I could make value replacement 
                     a feature of the policy class. */
                     ++version_;
-                    indexArray_[offsetIndex] = KeyValuePair.Create(int.MaxValue, indexArray_[offsetIndex].Value);
+                    keyArray_[keyIndex] = KeyValuePair.Create(int.MaxValue, keyArray_[keyIndex].Value);
                     DemoteKey(set, setOffset);
                     return true;
                 }
@@ -291,18 +312,18 @@ namespace ParksComputing.SetAssociativeCache {
             var set = FindSet(item.Key);
             var setBegin = set * ways_;
 
-            for (int setOffset = 0, offsetIndex = setBegin; setOffset < ways_; ++setOffset, ++offsetIndex) {
-                int itemIndex = indexArray_[offsetIndex].Key;
+            for (int setOffset = 0, keyIndex = setBegin; setOffset < ways_; ++setOffset, ++keyIndex) {
+                int valueIndex = keyArray_[keyIndex].Key;
 
-                if (itemIndex != int.MaxValue &&
-                    itemArray_[itemIndex].Key.Equals(item.Key) &&
-                    itemArray_[itemIndex].Value.Equals(item.Value)) {
+                if (valueIndex != int.MaxValue &&
+                    valueArray_[valueIndex].Key.Equals(item.Key) &&
+                    valueArray_[valueIndex].Value.Equals(item.Value)) {
                     /* Since all access to the cache values goes through the index array first, 
                     I'll try leaving the value in the cache and see how that goes. It's faster, 
                     but for some reason it make me nervous. I suppose I could make value replacement 
                     a feature of the policy class. */
                     ++version_;
-                    indexArray_[offsetIndex] = KeyValuePair.Create(int.MaxValue, indexArray_[offsetIndex].Value);
+                    keyArray_[keyIndex] = KeyValuePair.Create(int.MaxValue, keyArray_[keyIndex].Value);
                     DemoteKey(set, setOffset);
                     return true;
                 }
@@ -321,9 +342,9 @@ namespace ParksComputing.SetAssociativeCache {
             get {
                 List<TKey> value = new();
 
-                foreach (var itemIndex in indexArray_) {
-                    if (itemIndex.Key != int.MaxValue) {
-                        value.Add(itemArray_[itemIndex.Key].Key);
+                foreach (var valueIndex in keyArray_) {
+                    if (valueIndex.Key != int.MaxValue) {
+                        value.Add(valueArray_[valueIndex.Key].Key);
                     }
                 }
 
@@ -341,9 +362,9 @@ namespace ParksComputing.SetAssociativeCache {
             get {
                 List<TValue> value = new();
 
-                foreach (var itemIndex in indexArray_) {
-                    if (itemIndex.Key != int.MaxValue) {
-                        value.Add(itemArray_[itemIndex.Key].Value);
+                foreach (var valueIndex in keyArray_) {
+                    if (valueIndex.Key != int.MaxValue) {
+                        value.Add(valueArray_[valueIndex.Key].Value);
                     }
                 }
 
@@ -370,16 +391,16 @@ namespace ParksComputing.SetAssociativeCache {
         /// </exception>
         public virtual void CopyTo(KeyValuePair<TKey, TValue>[] array, int arrayIndex) {
             if (array == null) {
-                throw new ArgumentNullException("array");
+                throw new ArgumentNullException(nameof(array));
             }
 
             if (arrayIndex < 0) {
-                throw new ArgumentOutOfRangeException("arrayIndex");
+                throw new ArgumentOutOfRangeException(nameof(arrayIndex));
             }
 
-            foreach (KeyValuePair<int, int> itemIndex in indexArray_) {
-                if (itemIndex.Key != int.MaxValue) {
-                    array[arrayIndex] = KeyValuePair.Create(itemArray_[itemIndex.Key].Key, itemArray_[itemIndex.Key].Value);
+            foreach (KeyValuePair<int, int> keyArrayItem in keyArray_) {
+                if (keyArrayItem.Key != int.MaxValue) {
+                    array[arrayIndex] = KeyValuePair.Create(valueArray_[keyArrayItem.Key].Key, valueArray_[keyArrayItem.Key].Value);
                     ++arrayIndex;
                 }
             }
@@ -428,7 +449,7 @@ namespace ParksComputing.SetAssociativeCache {
                 }
 
                 while (index_ < count_) {
-                    current_ = new KeyValuePair<TKey, TValue>(cache_.itemArray_[index_].Key, cache_.itemArray_[index_].Value);
+                    current_ = new KeyValuePair<TKey, TValue>(cache_.valueArray_[index_].Key, cache_.valueArray_[index_].Value);
                     ++index_;
                     return true;
                 }
@@ -474,8 +495,8 @@ namespace ParksComputing.SetAssociativeCache {
             /* Keep in mind that the data aren't cleared. We are clearing the indices which point 
             to the data. With no indices, the data aren't accessible. */
             ++version_;
-            indexArray_ = new KeyValuePair<int, int>[Capacity];
-            Array.Fill(indexArray_, KeyValuePair.Create(int.MaxValue, 0));
+            keyArray_ = new KeyValuePair<int, int>[Capacity];
+            Array.Fill(keyArray_, KeyValuePair.Create(int.MaxValue, 0));
         }
 
         /// <summary>
@@ -499,10 +520,10 @@ namespace ParksComputing.SetAssociativeCache {
         /// <param name="value">The object to use as the value of the element to add.</param>
         /// <param name="set">The set in which to add the element.</param>
         /// <param name="setOffset">The offset into the set at which to add the element.</param>
-        /// <param name="itemIndex">The index into the item array at which the element is stored.</param>
-        protected void Add(TKey key, TValue value, int set, int setOffset, int itemIndex) {
+        /// <param name="valueIndex">The index into the item array at which the element is stored.</param>
+        protected void Add(TKey key, TValue value, int set, int setOffset, int valueIndex) {
             ++version_;
-            itemArray_[itemIndex] = KeyValuePair.Create(key, value);
+            valueArray_[valueIndex] = KeyValuePair.Create(key, value);
             SetNewItemIndex(set, setOffset);
         }
 
@@ -534,31 +555,31 @@ namespace ParksComputing.SetAssociativeCache {
             evictKey = default(TKey);
 
             if (key == null) {
-                throw new ArgumentNullException("key");
+                throw new ArgumentNullException(nameof(key));
             }
 
             var set = FindSet(key);
             var setBegin = set * ways_;
             int setOffset;
-            int offsetIndex;
-            int itemIndex;
+            int keyIndex;
+            int valueIndex;
 
-            for (setOffset = 0, offsetIndex = setBegin; setOffset < ways_; ++setOffset, ++offsetIndex) {
-                itemIndex = indexArray_[offsetIndex].Key;
+            for (setOffset = 0, keyIndex = setBegin; setOffset < ways_; ++setOffset, ++keyIndex) {
+                valueIndex = keyArray_[keyIndex].Key;
 
-                if (itemIndex == int.MaxValue) {
+                if (valueIndex == int.MaxValue) {
                     return false;
                 }
 
-                if (itemArray_[itemIndex].Key.Equals(key)) {
+                if (valueArray_[valueIndex].Key.Equals(key)) {
                     return false;
                 }
             }
 
             setOffset = ReplacementOffset;
-            offsetIndex = setBegin + setOffset;
-            itemIndex = indexArray_[offsetIndex].Key;
-            evictKey = itemArray_[itemIndex].Key;
+            keyIndex = setBegin + setOffset;
+            valueIndex = keyArray_[keyIndex].Key;
+            evictKey = valueArray_[valueIndex].Key;
             return true;
         }
 
