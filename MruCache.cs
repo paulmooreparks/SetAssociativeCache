@@ -20,6 +20,6 @@ namespace ParksComputing.SetAssociativeCache {
         /// <summary>
         /// The offset into the set for the item which should be evicted from the cache.
         /// </summary>
-        protected override int ReplacementOffset => 0;
+        protected override int ReplacementOffset => 0; // MRU is at the lowest index in the set
     }
 }

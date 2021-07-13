@@ -8,6 +8,16 @@ namespace ParksComputing.SetAssociativeCache {
     /// </summary>
     /// <typeparam name="TKey">The type of keys in the cache.</typeparam>
     /// <typeparam name="TValue">The type of values in the cache.</typeparam>
+    /// <remarks>
+    /// XfuCache works by tracking accesses to each cache item via the key array. Recall that 
+    /// the key array stores key/value pairs; the key is the index of the associate cache item 
+    /// in the value array, and the value may be used by the cache policy. This cache policy 
+    /// and its derivatives interprets the value element as the count of accesses for each 
+    /// cache item. As the counts are updated, the set is sorted such that lower counts are 
+    /// stored at lower indices in the key array and higher counts are stored at higher indices. 
+    /// (Cache items in the value array DO NOT move around, only the pointer elements in the 
+    /// key array do that.)
+    /// </remarks>
     public abstract class XfuCache<TKey, TValue> : CacheImplBase<TKey, TValue> {
         /// <summary>
         /// Create a new <c>XfuArrayCache</c> instance.
@@ -26,10 +36,9 @@ namespace ParksComputing.SetAssociativeCache {
         override protected void SetNewItemIndex(int set, int setOffset) {
             int headIndex = set * ways_;
             int keyIndex = headIndex + setOffset;
-            var newHeadItem = new KeyValuePair<int, int>(keyArray_[keyIndex].Key, 1);
 
-            /* The new index gets sorted to the front, but with a count of 1. A newly-cached item 
-            should not be immediately evicted, so it's safe until pushed down by other new items. */
+            /* The new index is moved to the front with a count of 1. */
+            var newHeadItem = new KeyValuePair<int, int>(keyArray_[keyIndex].Key, 1);
             System.Array.Copy(keyArray_, headIndex, keyArray_, headIndex + 1, setOffset);
             keyArray_[headIndex] = newHeadItem;
         }
@@ -43,9 +52,19 @@ namespace ParksComputing.SetAssociativeCache {
             int headIndex = set * ways_;
             int keyIndex = headIndex + setOffset;
             int newHeadItemKey = keyArray_[keyIndex].Key;
-            int newHeadItemValue = keyArray_[keyIndex].Value + 1;
-            keyArray_[keyIndex] = new KeyValuePair<int, int>(newHeadItemKey, newHeadItemValue);
+            int newHeadItemValue = keyArray_[keyIndex].Value;
 
+            /* Increment the frequency count, checking for overflow. */
+            try {
+                newHeadItemValue = checked(newHeadItemValue + 1);
+            }
+            catch (OverflowException) {
+                /* If the item has been in the cache long enough for the counter to wrap around, 
+                it's probably time to evict it. Regardless, we'll just set it back to one. */
+                newHeadItemValue = 1;
+            }
+
+            keyArray_[keyIndex] = new KeyValuePair<int, int>(newHeadItemKey, newHeadItemValue);
             Array.Sort(keyArray_, headIndex, ways_, lfuComparer_);
         }
 
@@ -60,7 +79,6 @@ namespace ParksComputing.SetAssociativeCache {
             int newTailItemKey = keyArray_[keyIndex].Key;
             int newTailItemValue = 0;
             keyArray_[keyIndex] = new KeyValuePair<int, int>(newTailItemKey, newTailItemValue);
-
             Array.Sort(keyArray_, headIndex, ways_, lfuComparer_);
         }
 

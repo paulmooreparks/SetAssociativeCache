@@ -8,6 +8,14 @@ namespace ParksComputing.SetAssociativeCache {
     /// </summary>
     /// <typeparam name="TKey">The type of keys in the cache.</typeparam>
     /// <typeparam name="TValue">The type of values in the cache.</typeparam>
+    /// <remarks>
+    /// XruCache works by moving the key for the most recently access cached item to the lowest 
+    /// index in the relevant set in the key array. Recall that the key array stores key/value 
+    /// pairs; the key is the index of the associate cache item in the value array, and the value 
+    /// may be used by the cache policy. This cache policy does not use the value element. 
+    /// (Cache items in the value array DO NOT move around, only the pointer elements in the key 
+    /// array do that.)
+    /// </remarks>
     public abstract class XruCache<TKey, TValue> : CacheImplBase<TKey, TValue> {
         /// <summary>
         /// Create a new <c>XfuArrayCache</c> instance.
@@ -37,7 +45,7 @@ namespace ParksComputing.SetAssociativeCache {
             int keyIndex = headIndex + setOffset;
             int newHeadItemKey = keyArray_[keyIndex].Key;
             int newHeadItemValue = keyArray_[keyIndex].Value;
-
+            /* Move the key to the lowest index in the set. */
             System.Array.Copy(keyArray_, headIndex, keyArray_, headIndex + 1, setOffset);
             keyArray_[headIndex] = new KeyValuePair<int, int>(newHeadItemKey, newHeadItemValue);
         }
@@ -54,7 +62,7 @@ namespace ParksComputing.SetAssociativeCache {
             int count = ways_ - setOffset - 1;
             int newTailItemKey = keyArray_[keyIndex].Key;
             int newTailItemValue = keyArray_[keyIndex].Value;
-
+            /* Move the key to the highest index in the set. */
             System.Array.Copy(keyArray_, keyIndex + 1, keyArray_, keyIndex, count);
             keyArray_[tailIndex] = new KeyValuePair<int, int>(newTailItemKey, newTailItemValue);
         }
