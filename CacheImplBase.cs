@@ -12,8 +12,8 @@ namespace ParksComputing.SetAssociativeCache {
     /// <remarks>
     /// THIS CLASS IS NOT THREAD SAFE! Thread-safe access is the reponsibility of the client.
     /// You will notice that I copy a lot of the code that walks through a set looking for 
-    /// keys. I tried abstracting this with an enumerator using yield return, and the code took 
-    /// four times longer to run.
+    /// keys. I tried abstracting this away with a few different attempts, and each was a 
+    /// little bit cleaner, maybe, albeit harder to follow, but a lot slower.
     /// </remarks>
     public abstract class CacheImplBase<TKey, TValue> : ISetAssociativeCache<TKey, TValue> {
 
@@ -139,6 +139,55 @@ namespace ParksComputing.SetAssociativeCache {
         protected abstract int ReplacementOffset { get; }
 
         /// <summary>
+        /// Iterate over the elements of a set in the key array, calling delegates at 
+        /// defined points.
+        /// </summary>
+        /// <param name="set">The set to operate on.</param>
+        /// <param name="setOffset">The offset into the set where iteration ended, else 
+        /// one past the end.</param>
+        /// <param name="onStep">Delegate to call on every iteration. If this delegate returns 
+        /// <c>false</c>, iteration stops and <paramref name="onComplete"/> is not called.</param>
+        /// <param name="onComplete">Called if iteration over every item completes. May be <c>null</c>.</param>
+        /// <param name="onFinal">Always called before method returns. May be <c>null</c>.</param>
+        /// <exception cref="ArgumentException"><paramref name="onStep"/> delegate is null.</exception>
+        /// <remarks>
+        /// I tried using this abstraction to remove all the copies of the <c>for</c> loop that 
+        /// iterates over a set, but it's about 70% slower on my system than the original code. 
+        /// I'm opting for speed over slickness, but I'll keep this here for reference.
+        /// </remarks>
+        protected void WalkSet(int set, out int setOffset,
+            Func<int, int, int, bool> onStep,
+            Func<int, bool> onComplete,
+            Func<int, bool> onFinal) {
+
+            if (onStep == null) {
+                throw new ArgumentNullException(nameof(onStep));
+            }
+
+            /* Get the first array index for the set; in other words, where in the array does the set start? */
+            var setBegin = set * ways_;
+
+            int keyIndex; // Actual array location in the key array for setOffset
+            bool continueLoop = true;
+
+            try {
+                /* Loop over the set, incrementing both the set offset (setOffset) and the key-array index (keyIndex) */
+                for (setOffset = 0, keyIndex = setBegin; continueLoop && setOffset < ways_; ++setOffset, ++keyIndex) {
+                    continueLoop = onStep(set, setOffset, keyIndex);
+                }
+
+                if (continueLoop && onComplete != null) {
+                    onComplete(set);
+                }
+            }
+            finally {
+                if (onFinal != null) {
+                    onFinal(set);
+                }
+            }
+        }
+
+        /// <summary>
         /// Adds an element with the provided <paramref name="key"/> and <paramref name="value"/> 
         /// to the ParksComputing.ISetAssociativeCache.
         /// </summary>
@@ -152,7 +201,6 @@ namespace ParksComputing.SetAssociativeCache {
 
             /* Get the number of the set that would contain the new key. */
             var set = FindSet(key);
-
             /* Get the first array index for the set; in other words, where in the array does the set start? */
             var setBegin = set * ways_; 
 
