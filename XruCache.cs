@@ -39,7 +39,7 @@ namespace ParksComputing.SetAssociativeCache {
             int newHeadItemValue = keyArray_[keyIndex].Value;
 
             System.Array.Copy(keyArray_, headIndex, keyArray_, headIndex + 1, setOffset);
-            keyArray_[headIndex] = KeyValuePair.Create(newHeadItemKey, newHeadItemValue);
+            keyArray_[headIndex] = new KeyValuePair<int, int>(newHeadItemKey, newHeadItemValue);
         }
 
         /// <summary>
@@ -56,7 +56,7 @@ namespace ParksComputing.SetAssociativeCache {
             int newTailItemValue = keyArray_[keyIndex].Value;
 
             System.Array.Copy(keyArray_, keyIndex + 1, keyArray_, keyIndex, count);
-            keyArray_[tailIndex] = KeyValuePair.Create(newTailItemKey, newTailItemValue);
+            keyArray_[tailIndex] = new KeyValuePair<int, int>(newTailItemKey, newTailItemValue);
         }
     }
 }

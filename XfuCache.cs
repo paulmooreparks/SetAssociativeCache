@@ -26,7 +26,7 @@ namespace ParksComputing.SetAssociativeCache {
         override protected void SetNewItemIndex(int set, int setOffset) {
             int headIndex = set * ways_;
             int keyIndex = headIndex + setOffset;
-            var newHeadItem = KeyValuePair.Create(keyArray_[keyIndex].Key, 1);
+            var newHeadItem = new KeyValuePair<int, int>(keyArray_[keyIndex].Key, 1);
 
             /* The new index gets sorted to the front, but with a count of 1. A newly-cached item 
             should not be immediately evicted, so it's safe until pushed down by other new items. */
@@ -44,7 +44,7 @@ namespace ParksComputing.SetAssociativeCache {
             int keyIndex = headIndex + setOffset;
             int newHeadItemKey = keyArray_[keyIndex].Key;
             int newHeadItemValue = keyArray_[keyIndex].Value + 1;
-            keyArray_[keyIndex] = KeyValuePair.Create(newHeadItemKey, newHeadItemValue);
+            keyArray_[keyIndex] = new KeyValuePair<int, int>(newHeadItemKey, newHeadItemValue);
 
             Array.Sort(keyArray_, headIndex, ways_, lfuComparer_);
         }
@@ -59,7 +59,7 @@ namespace ParksComputing.SetAssociativeCache {
             int keyIndex = headIndex + setOffset;
             int newTailItemKey = keyArray_[keyIndex].Key;
             int newTailItemValue = 0;
-            keyArray_[keyIndex] = KeyValuePair.Create(newTailItemKey, newTailItemValue);
+            keyArray_[keyIndex] = new KeyValuePair<int, int>(newTailItemKey, newTailItemValue);
 
             Array.Sort(keyArray_, headIndex, ways_, lfuComparer_);
         }

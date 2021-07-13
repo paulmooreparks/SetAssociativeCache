@@ -220,7 +220,7 @@ namespace ParksComputing.SetAssociativeCache {
                     we set the value index to the current key index. */
                     valueIndex = keyIndex;
                     /* Create a new entry in the key array. */
-                    keyArray_[keyIndex] = KeyValuePair.Create(valueIndex, keyArray_[keyIndex].Value);
+                    keyArray_[keyIndex] = new KeyValuePair<int, int>(valueIndex, keyArray_[keyIndex].Value);
                     /* Delegate adding the cache item and managing the data for the cache policy to the Add method. */
                     Add(key, value, set, setOffset, valueIndex);
                     return;
@@ -386,7 +386,7 @@ namespace ParksComputing.SetAssociativeCache {
                     /* Invalidate any outstanding interators. */
                     ++version_;
                     /* Mark this location in the key array as available. */
-                    keyArray_[keyIndex] = KeyValuePair.Create(EMPTY_MARKER, keyArray_[keyIndex].Value);
+                    keyArray_[keyIndex] = new KeyValuePair<int, int>(EMPTY_MARKER, keyArray_[keyIndex].Value);
                     DemoteKey(set, setOffset);
                     return true;
                 }
@@ -421,7 +421,7 @@ namespace ParksComputing.SetAssociativeCache {
 
                     /* Invalidate any outstanding interators. */
                     ++version_;
-                    keyArray_[keyIndex] = KeyValuePair.Create(EMPTY_MARKER, keyArray_[keyIndex].Value);
+                    keyArray_[keyIndex] = new KeyValuePair<int, int>(EMPTY_MARKER, keyArray_[keyIndex].Value);
                     DemoteKey(set, setOffset);
                     return true;
                 }
@@ -498,7 +498,7 @@ namespace ParksComputing.SetAssociativeCache {
 
             foreach (KeyValuePair<int, int> keyArrayItem in keyArray_) {
                 if (keyArrayItem.Key != EMPTY_MARKER) {
-                    array[arrayIndex] = KeyValuePair.Create(valueArray_[keyArrayItem.Key].Key, valueArray_[keyArrayItem.Key].Value);
+                    array[arrayIndex] = new KeyValuePair<TKey, TValue>(valueArray_[keyArrayItem.Key].Key, valueArray_[keyArrayItem.Key].Value);
                     ++arrayIndex;
                 }
             }
@@ -603,7 +603,7 @@ namespace ParksComputing.SetAssociativeCache {
 
             /* Wipe the key array. */
             keyArray_ = new KeyValuePair<int, int>[Capacity];
-            Array.Fill(keyArray_, KeyValuePair.Create(EMPTY_MARKER, 0));
+            Array.Fill(keyArray_, new KeyValuePair<int, int>(EMPTY_MARKER, 0));
         }
 
         /// <summary>
@@ -632,7 +632,7 @@ namespace ParksComputing.SetAssociativeCache {
             /* Invalidate any outstanding interators. */
             ++version_;
             /* Store the key/value pair at the designated location in the value array. */
-            valueArray_[valueIndex] = KeyValuePair.Create(key, value);
+            valueArray_[valueIndex] = new KeyValuePair<TKey, TValue>(key, value);
 
             /* Update the key array with the index into the value array and adjust the key array as 
             necessary according to the details of the cache policy. */
