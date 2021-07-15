@@ -4,7 +4,6 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace ParksComputing.SetAssociativeCache {
 
-
     /// <summary>
     /// Represents a generic set-associative cache of key/value pairs.
     /// Full disclosure: I cribbed most of these comments and the overall structure from

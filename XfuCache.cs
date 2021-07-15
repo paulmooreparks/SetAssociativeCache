@@ -32,10 +32,10 @@ namespace ParksComputing.SetAssociativeCache {
         /// necessary according to the details of the cache policy.
         /// </summary>
         /// <param name="set">Which set to update.</param>
-        /// <param name="setOffset">The offset into the set to update.</param>
-        override protected void SetNewItemIndex(int set, int setOffset) {
+        /// <param name="keyIndex">The index into the key array.</param>
+        override protected void UpdateSet(int set, int keyIndex) {
             int headIndex = set * ways_;
-            int keyIndex = headIndex + setOffset;
+            int setOffset = keyIndex % ways_;
 
             /* The new index is moved to the front with a count of 1. */
             var newHeadItem = new KeyValuePair<int, int>(keyArray_[keyIndex].Key, 1);
@@ -47,10 +47,9 @@ namespace ParksComputing.SetAssociativeCache {
         /// Increment the count for the last cache item accessed, then sort the set based on all counts.
         /// </summary>
         /// <param name="set">The set in which the key is stored.</param>
-        /// <param name="setOffset">The offset into the set at which the key is stored.</param>
-        protected override void PromoteKey(int set, int setOffset) {
+        /// <param name="keyIndex">The index into the key array.</param>
+        protected override void PromoteKey(int set, int keyIndex) {
             int headIndex = set * ways_;
-            int keyIndex = headIndex + setOffset;
             int newHeadItemKey = keyArray_[keyIndex].Key;
             int newHeadItemValue = keyArray_[keyIndex].Value;
 
@@ -72,10 +71,9 @@ namespace ParksComputing.SetAssociativeCache {
         /// Set an item's count to zero (removal from cache, for example), then sort the set based on all counts.
         /// </summary>
         /// <param name="set">The set in which the key is stored.</param>
-        /// <param name="setOffset">The offset into the set at which the key is stored.</param>
-        protected override void DemoteKey(int set, int setOffset) {
+        /// <param name="keyIndex">The index into the key array.</param>
+        protected override void DemoteKey(int set, int keyIndex) {
             int headIndex = set * ways_;
-            int keyIndex = headIndex + setOffset;
             int newTailItemKey = keyArray_[keyIndex].Key;
             int newTailItemValue = 0;
             keyArray_[keyIndex] = new KeyValuePair<int, int>(newTailItemKey, newTailItemValue);

@@ -30,19 +30,19 @@ namespace ParksComputing.SetAssociativeCache {
         /// necessary according to the details of the cache policy.
         /// </summary>
         /// <param name="set">Which set to update.</param>
-        /// <param name="setOffset">The offset into the set to update.</param>
-        override protected void SetNewItemIndex(int set, int setOffset) {
-            PromoteKey(set, setOffset);
+        /// <param name="keyIndex">The offset into the set to update.</param>
+        override protected void UpdateSet(int set, int keyIndex) {
+            PromoteKey(set, keyIndex);
         }
 
         /// <summary>
         /// Move the key in the given set at the given offset to the front of the set. 
         /// </summary>
         /// <param name="set">The set in which the key is stored.</param>
-        /// <param name="setOffset">The offset into the set at which the key is stored.</param>
-        protected override void PromoteKey(int set, int setOffset) {
+        /// <param name="keyIndex">The index into the key array.</param>
+        protected override void PromoteKey(int set, int keyIndex) {
             int headIndex = set * ways_;
-            int keyIndex = headIndex + setOffset;
+            int setOffset = keyIndex % ways_;
             int newHeadItemKey = keyArray_[keyIndex].Key;
             int newHeadItemValue = keyArray_[keyIndex].Value;
             /* Move the key to the lowest index in the set. */
@@ -54,10 +54,10 @@ namespace ParksComputing.SetAssociativeCache {
         /// Move the key in the given set at the given offset to the end of the set. 
         /// </summary>
         /// <param name="set">The set in which the key is stored.</param>
-        /// <param name="setOffset">The offset into the set at which the key is stored.</param>
-        protected override void DemoteKey(int set, int setOffset) {
+        /// <param name="keyIndex">The index into the key array.</param>
+        protected override void DemoteKey(int set, int keyIndex) {
             int headIndex = set * ways_;
-            int keyIndex = headIndex + setOffset;
+            int setOffset = keyIndex % ways_;
             int tailIndex = headIndex + ways_ - 1;
             int count = ways_ - setOffset - 1;
             int newTailItemKey = keyArray_[keyIndex].Key;
