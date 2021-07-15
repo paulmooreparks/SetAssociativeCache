@@ -29,13 +29,13 @@ namespace ParksComputing.SetAssociativeCache {
 
         /* There are two arrays of key/value pairs which are used to track and store the actual cache items. */
 
-        /* keyArray_ stores the indices of the actual cache items stored in the value array. Each 
+        /* pointerArray_ stores the indices of the actual cache items stored in the value array. Each 
         item in the array is a key/value pair of two integers. The first integer is an index into 
         the value array. The second index is interpreted by the derived class that implements a 
         specific eviction policy. This array is sorted/rearranged/whatever according to the needs 
         of the cache policy, since it's faster to move integer pairs around, and they're close 
         together in the CPU cache. */
-        protected KeyValuePair<int, int>[] keyArray_;
+        protected KeyValuePair<int, int>[] pointerArray_;
 
         /* valueArray_ stores the key/value pairs of the actual cache items. Once an item is placed 
         at an index in this array, it stays there unless it is replaced with a new key/value pair or 
@@ -124,16 +124,22 @@ namespace ParksComputing.SetAssociativeCache {
         /// Return an enumerable container of indices into the value array from a set in the key array.
         /// </summary>
         /// <param name="set">The set to operate on.</param>
-        protected IEnumerable<int> GetSetKeyIndices(int set) {
+        /// <remarks>
+        /// Generalizing enumeration of sets this way is actually slower -- notably, but not excessively -- 
+        /// than copying the loop to all the places in the class that need to enumerate sets. I'll stay 
+        /// with this trade-off for now since it gives me some flexibility to modify the implementation 
+        /// later.
+        /// </remarks>
+        protected IEnumerable<int> GetSetPointerIndices(int set) {
             /* Get the first array index for the set; in other words, where in the array does the set start? */
             var setBegin = set * ways_;
 
             int setOffset; // Offset into the set in the index array for where the key is stored
-            int keyIndex; // Actual array location in the key array for setOffset
+            int pointerIndex; // Actual array location in the key array for setOffset
 
-            /* Loop over the set, incrementing both the set offset (setOffset) and the key-array index (keyIndex) */
-            for (setOffset = 0, keyIndex = setBegin; setOffset < ways_; ++setOffset, ++keyIndex) {
-                yield return keyIndex;
+            /* Loop over the set, incrementing both the set offset (setOffset) and the pointer-array index (pointerIndex) */
+            for (setOffset = 0, pointerIndex = setBegin; setOffset < ways_; ++setOffset, ++pointerIndex) {
+                yield return pointerIndex;
             }
         }
 
@@ -149,35 +155,44 @@ namespace ParksComputing.SetAssociativeCache {
                 throw new ArgumentNullException(nameof(key));
             }
 
+            /// <remarks>
+            /// The following iteration pattern repeats in most of the methods in this class, so 
+            /// it bears explaining. The call to <c>FindSet</c> gets the set in which the <c>key</c>  
+            /// would be found. The call to <c>GetSetPointerIndices</c> retrieves an enumerable 
+            /// collection of indices into the pointer array. The <c>foreach</c> loop iterates over 
+            /// the enumeration to allow searching for keys in the set, looking for empty slots in 
+            /// the set, and any other set-level operations.
+            /// </remarks>
+
             /* Get the number of the set that would contain the new key. */
             var set = FindSet(key);
             int valueIndex; // Index into the value array where the actual cache item (key/value pair) is stored
 
-            var setItems = GetSetKeyIndices(set);
+            var setItems = GetSetPointerIndices(set);
 
-            foreach (int keyIndex in setItems) {
+            foreach (int pointerIndex in setItems) {
                 /* Get the index into the value array */
-                valueIndex = keyArray_[keyIndex].Key;
+                valueIndex = pointerArray_[pointerIndex].Key;
 
                 /* If the index is a sentinel value for "nothing stored here"... */
                 if (valueIndex == EMPTY_MARKER) {
                     /* When the slots in a set are being filled initially, the index of each empty spot in the set in 
                     the key index corresponds to the index of the empty spot in the set in the value index. Therefore, 
                     we set the value index to the current key index. */
-                    valueIndex = keyIndex;
+                    valueIndex = pointerIndex;
                     /* Create a new entry in the key array. */
-                    keyArray_[keyIndex] = new KeyValuePair<int, int>(valueIndex, keyArray_[keyIndex].Value);
+                    pointerArray_[pointerIndex] = new KeyValuePair<int, int>(valueIndex, pointerArray_[pointerIndex].Value);
                     /* Delegate adding the cache item and managing the data for the cache policy to the Add method. */
-                    Add(key, value, set, keyIndex, valueIndex);
+                    Add(key, value, set, pointerIndex, valueIndex);
                     return;
                 }
 
                 /* If the new key is equal to the key at the current position... */
                 if (valueArray_[valueIndex].Key.Equals(key)) {
                     /* We'll replace the value in the item array with this value. */
-                    valueIndex = keyArray_[keyIndex].Key;
+                    valueIndex = pointerArray_[pointerIndex].Key;
                     /* Delegate adding the cache item and managing the data for the cache policy to the Add method. */
-                    Add(key, value, set, keyIndex, valueIndex);
+                    Add(key, value, set, pointerIndex, valueIndex);
                     return;
                 }
             }
@@ -190,7 +205,7 @@ namespace ParksComputing.SetAssociativeCache {
             int newKeyIndex = setBegin + ReplacementOffset;
 
             /* Get the index into the value array for where the evicted cache item is stored. */
-            valueIndex = keyArray_[newKeyIndex].Key;
+            valueIndex = pointerArray_[newKeyIndex].Key;
             /* Delegate adding the cache item and managing the data for the cache policy to the Add method. */
             Add(key, value, set, newKeyIndex, valueIndex);
             return;
@@ -218,16 +233,16 @@ namespace ParksComputing.SetAssociativeCache {
             }
 
             var set = FindSet(key);
-            var setItems = GetSetKeyIndices(set);
+            var setItems = GetSetPointerIndices(set);
 
-            foreach (int keyIndex in setItems) {
-                int valueIndex = keyArray_[keyIndex].Key;
+            foreach (int pointerIndex in setItems) {
+                int valueIndex = pointerArray_[pointerIndex].Key;
 
                 /* If the key is found in the value array... */
                 if (valueIndex != EMPTY_MARKER &&
                     valueArray_[valueIndex].Key.Equals(key)) {
                     /* "Touch" the key to note that it has been accessed. */
-                    PromoteKey(set, keyIndex);
+                    PromoteKey(set, pointerIndex);
                     return true;
                 }
             }
@@ -242,17 +257,17 @@ namespace ParksComputing.SetAssociativeCache {
         /// <returns>true if item is found in the System.Collections.Generic.ICollection; otherwise, false.</returns>
         public virtual bool Contains(KeyValuePair<TKey, TValue> item) {
             var set = FindSet(item.Key);
-            var setItems = GetSetKeyIndices(set);
+            var setItems = GetSetPointerIndices(set);
 
-            foreach (int keyIndex in setItems) {
-                int valueIndex = keyArray_[keyIndex].Key;
+            foreach (int pointerIndex in setItems) {
+                int valueIndex = pointerArray_[pointerIndex].Key;
 
                 /* If the key is found in the value array, and the value at that key matches the provided value... */
                 if (valueIndex != EMPTY_MARKER &&
                     valueArray_[valueIndex].Key.Equals(item.Key) &&
                     valueArray_[valueIndex].Value.Equals(item.Value)) {
                     /* "Touch" the key to note that it has been accessed. */
-                    PromoteKey(set, keyIndex);
+                    PromoteKey(set, pointerIndex);
                     return true;
                 }
             }
@@ -280,15 +295,15 @@ namespace ParksComputing.SetAssociativeCache {
             }
 
             var set = FindSet(key);
-            var setItems = GetSetKeyIndices(set);
+            var setItems = GetSetPointerIndices(set);
 
-            foreach (int keyIndex in setItems) {
-                int valueIndex = keyArray_[keyIndex].Key;
+            foreach (int pointerIndex in setItems) {
+                int valueIndex = pointerArray_[pointerIndex].Key;
 
                 /* If the key is found in the value array... */
                 if (valueIndex != EMPTY_MARKER && valueArray_[valueIndex].Key.Equals(key)) {
                     /* "Touch" the key to note that it has been accessed. */
-                    PromoteKey(set, keyIndex);
+                    PromoteKey(set, pointerIndex);
                     /* Return the value found at this location in the value array. */
                     value = valueArray_[valueIndex].Value;
                     return true;
@@ -313,10 +328,10 @@ namespace ParksComputing.SetAssociativeCache {
             }
 
             var set = FindSet(key);
-            var setItems = GetSetKeyIndices(set);
+            var setItems = GetSetPointerIndices(set);
 
-            foreach (int keyIndex in setItems) {
-                int valueIndex = keyArray_[keyIndex].Key;
+            foreach (int pointerIndex in setItems) {
+                int valueIndex = pointerArray_[pointerIndex].Key;
 
                 if (valueIndex != EMPTY_MARKER && valueArray_[valueIndex].Key.Equals(key)) {
                     /* Since all access to the cache values goes through the index array first, 
@@ -327,8 +342,8 @@ namespace ParksComputing.SetAssociativeCache {
                     /* Invalidate any outstanding interators. */
                     ++version_;
                     /* Mark this location in the key array as available. */
-                    keyArray_[keyIndex] = new KeyValuePair<int, int>(EMPTY_MARKER, keyArray_[keyIndex].Value);
-                    DemoteKey(set, keyIndex);
+                    pointerArray_[pointerIndex] = new KeyValuePair<int, int>(EMPTY_MARKER, pointerArray_[pointerIndex].Value);
+                    DemoteKey(set, pointerIndex);
                     --count_;
                     return true;
                 }
@@ -347,10 +362,10 @@ namespace ParksComputing.SetAssociativeCache {
         /// </returns>
         public virtual bool Remove(KeyValuePair<TKey, TValue> item) {
             var set = FindSet(item.Key);
-            var setItems = GetSetKeyIndices(set);
+            var setItems = GetSetPointerIndices(set);
 
-            foreach (int keyIndex in setItems) {
-                int valueIndex = keyArray_[keyIndex].Key;
+            foreach (int pointerIndex in setItems) {
+                int valueIndex = pointerArray_[pointerIndex].Key;
 
                 if (valueIndex != EMPTY_MARKER &&
                     valueArray_[valueIndex].Key.Equals(item.Key) &&
@@ -362,8 +377,8 @@ namespace ParksComputing.SetAssociativeCache {
 
                     /* Invalidate any outstanding interators. */
                     ++version_;
-                    keyArray_[keyIndex] = new KeyValuePair<int, int>(EMPTY_MARKER, keyArray_[keyIndex].Value);
-                    DemoteKey(set, keyIndex);
+                    pointerArray_[pointerIndex] = new KeyValuePair<int, int>(EMPTY_MARKER, pointerArray_[pointerIndex].Value);
+                    DemoteKey(set, pointerIndex);
                     return true;
                 }
             }
@@ -381,7 +396,7 @@ namespace ParksComputing.SetAssociativeCache {
             get {
                 List<TKey> value = new();
 
-                foreach (var valueIndex in keyArray_) {
+                foreach (var valueIndex in pointerArray_) {
                     if (valueIndex.Key != EMPTY_MARKER) {
                         value.Add(valueArray_[valueIndex.Key].Key);
                     }
@@ -401,7 +416,7 @@ namespace ParksComputing.SetAssociativeCache {
             get {
                 List<TValue> value = new();
 
-                foreach (var valueIndex in keyArray_) {
+                foreach (var valueIndex in pointerArray_) {
                     if (valueIndex.Key != EMPTY_MARKER) {
                         value.Add(valueArray_[valueIndex.Key].Value);
                     }
@@ -437,7 +452,7 @@ namespace ParksComputing.SetAssociativeCache {
                 throw new ArgumentOutOfRangeException(nameof(arrayIndex));
             }
 
-            foreach (KeyValuePair<int, int> keyArrayItem in keyArray_) {
+            foreach (KeyValuePair<int, int> keyArrayItem in pointerArray_) {
                 if (keyArrayItem.Key != EMPTY_MARKER) {
                     array[arrayIndex] = new KeyValuePair<TKey, TValue>(valueArray_[keyArrayItem.Key].Key, valueArray_[keyArrayItem.Key].Value);
                     ++arrayIndex;
@@ -544,8 +559,53 @@ namespace ParksComputing.SetAssociativeCache {
             count_ = 0;
 
             /* Wipe the key array. */
-            keyArray_ = new KeyValuePair<int, int>[Capacity];
-            Array.Fill(keyArray_, new KeyValuePair<int, int>(EMPTY_MARKER, 0));
+            pointerArray_ = new KeyValuePair<int, int>[Capacity];
+            Array.Fill(pointerArray_, new KeyValuePair<int, int>(EMPTY_MARKER, 0));
+        }
+
+        /// <summary>
+        /// If the given <paramref name="key"/> would cause an existing key to be evicted, return <c>true</c> and set 
+        /// <paramref name="evictKey"/> to the key of the item that would be evicted if the new <paramref name="key"/> 
+        /// were added.
+        /// </summary>
+        /// <param name="key">Key to test.</param>
+        /// <param name="evictKey">Key of cache item that would be evicted, or default key value if return is false.</param>
+        /// <returns><c>true</c> if a key would be evicted; <c>false</c> otherwise.</returns>
+        public bool TryGetEvictKey(TKey key, out TKey evictKey) {
+            evictKey = default(TKey);
+
+            if (key == null) {
+                throw new ArgumentNullException(nameof(key));
+            }
+
+            /* Get the number of the set that would contain the new key. */
+            var set = FindSet(key);
+            int valueIndex; // Index into the value array where the actual cache item (key/value pair) is stored
+
+            var setItems = GetSetPointerIndices(set);
+
+            foreach (int pointerIndex in setItems) {
+                valueIndex = pointerArray_[pointerIndex].Key;
+
+                /* If the slot is empty, no eviction. */
+                if (valueIndex == EMPTY_MARKER) {
+                    return false;
+                }
+
+                /* If the key is found, no eviction. */
+                if (valueArray_[valueIndex].Key.Equals(key)) {
+                    return false;
+                }
+            }
+
+            /* If we get here, the set is full and adding the key would cause an eviction. Report 
+            the key that would be evicted by this replacement, according to the policy of the 
+            derived class. */
+            var setBegin = set * ways_;
+            int evictKeyIndex = setBegin + ReplacementOffset;
+            valueIndex = pointerArray_[evictKeyIndex].Key;
+            evictKey = valueArray_[valueIndex].Key;
+            return true;
         }
 
         /// <summary>
@@ -568,9 +628,9 @@ namespace ParksComputing.SetAssociativeCache {
         /// <param name="key">The object to use as the key of the element to add.</param>
         /// <param name="value">The object to use as the value of the element to add.</param>
         /// <param name="set">The set in which to add the element.</param>
-        /// <param name="keyIndex">The index into the key array at which to add the element's value index.</param>
+        /// <param name="pointerIndex">The index into the key array at which to add the element's value index.</param>
         /// <param name="valueIndex">The index into the item array at which the element is stored.</param>
-        protected void Add(TKey key, TValue value, int set, int keyIndex, int valueIndex) {
+        protected void Add(TKey key, TValue value, int set, int pointerIndex, int valueIndex) {
             /* Invalidate any outstanding interators. */
             ++version_;
             /* Store the key/value pair at the designated location in the value array. */
@@ -579,7 +639,7 @@ namespace ParksComputing.SetAssociativeCache {
 
             /* Update the key array with the index into the value array and adjust the key array as 
             necessary according to the details of the cache policy. */
-            UpdateSet(set, keyIndex);
+            UpdateSet(set, pointerIndex);
         }
 
         /// <summary>
@@ -587,67 +647,22 @@ namespace ParksComputing.SetAssociativeCache {
         /// necessary according to the details of the cache policy.
         /// </summary>
         /// <param name="set">Which set to update.</param>
-        /// <param name="keyIndex">The index into the key array.</param>
-        protected abstract void UpdateSet(int set, int keyIndex);
+        /// <param name="pointerIndex">The index into the key array.</param>
+        protected abstract void UpdateSet(int set, int pointerIndex);
 
         /// <summary>
         /// Increment the count for the last cache item accessed, then sort the set based on all counts.
         /// </summary>
         /// <param name="set">The set in which the key is stored.</param>
-        /// <param name="keyIndex">The index into the key array.</param>
-        protected abstract void PromoteKey(int set, int keyIndex);
+        /// <param name="pointerIndex">The index into the key array.</param>
+        protected abstract void PromoteKey(int set, int pointerIndex);
 
         /// <summary>
         /// Set an item's count to zero (removal from cache, for example), then sort the set based on all counts.
         /// </summary>
         /// <param name="set">The set in which the key is stored.</param>
-        /// <param name="keyIndex">The index into the key array.</param>
-        protected abstract void DemoteKey(int set, int keyIndex);
-
-        /// <summary>
-        /// If the given <paramref name="key"/> would cause an existing key to be evicted, return <c>true</c> and set 
-        /// <paramref name="evictKey"/> to the key of the item that would be evicted if the new <paramref name="key"/> 
-        /// were added.
-        /// </summary>
-        /// <param name="key">Key to test.</param>
-        /// <param name="evictKey">Key of cache item that would be evicted, or default key value if return is false.</param>
-        /// <returns><c>true</c> if a key would be evicted; <c>false</c> otherwise.</returns>
-        public bool TryGetEvictKey(TKey key, out TKey evictKey) {
-            evictKey = default(TKey);
-
-            if (key == null) {
-                throw new ArgumentNullException(nameof(key));
-            }
-
-            /* Get the number of the set that would contain the new key. */
-            var set = FindSet(key);
-            int valueIndex; // Index into the value array where the actual cache item (key/value pair) is stored
-
-            var setItems = GetSetKeyIndices(set);
-
-            foreach (int keyIndex in setItems) {
-                valueIndex = keyArray_[keyIndex].Key;
-
-                /* If the slot is empty, no eviction. */
-                if (valueIndex == EMPTY_MARKER) {
-                    return false;
-                }
-
-                /* If the key is found, no eviction. */
-                if (valueArray_[valueIndex].Key.Equals(key)) {
-                    return false;
-                }
-            }
-
-            /* If we get here, the set is full and adding the key would cause an eviction. Report 
-            the key that would be evicted by this replacement, according to the policy of the 
-            derived class. */
-            var setBegin = set * ways_;
-            int evictKeyIndex = setBegin + ReplacementOffset;
-            valueIndex = keyArray_[evictKeyIndex].Key;
-            evictKey = valueArray_[valueIndex].Key;
-            return true;
-        }
+        /// <param name="pointerIndex">The index into the key array.</param>
+        protected abstract void DemoteKey(int set, int pointerIndex);
 
     }
 }

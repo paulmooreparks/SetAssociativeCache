@@ -32,26 +32,26 @@ namespace ParksComputing.SetAssociativeCache {
         /// necessary according to the details of the cache policy.
         /// </summary>
         /// <param name="set">Which set to update.</param>
-        /// <param name="keyIndex">The index into the key array.</param>
-        override protected void UpdateSet(int set, int keyIndex) {
+        /// <param name="pointerIndex">The index into the key array.</param>
+        override protected void UpdateSet(int set, int pointerIndex) {
             int headIndex = set * ways_;
-            int setOffset = keyIndex % ways_;
+            int setOffset = pointerIndex % ways_;
 
             /* The new index is moved to the front with a count of 1. */
-            var newHeadItem = new KeyValuePair<int, int>(keyArray_[keyIndex].Key, 1);
-            System.Array.Copy(keyArray_, headIndex, keyArray_, headIndex + 1, setOffset);
-            keyArray_[headIndex] = newHeadItem;
+            var newHeadItem = new KeyValuePair<int, int>(pointerArray_[pointerIndex].Key, 1);
+            System.Array.Copy(pointerArray_, headIndex, pointerArray_, headIndex + 1, setOffset);
+            pointerArray_[headIndex] = newHeadItem;
         }
 
         /// <summary>
         /// Increment the count for the last cache item accessed, then sort the set based on all counts.
         /// </summary>
         /// <param name="set">The set in which the key is stored.</param>
-        /// <param name="keyIndex">The index into the key array.</param>
-        protected override void PromoteKey(int set, int keyIndex) {
+        /// <param name="pointerIndex">The index into the key array.</param>
+        protected override void PromoteKey(int set, int pointerIndex) {
             int headIndex = set * ways_;
-            int newHeadItemKey = keyArray_[keyIndex].Key;
-            int newHeadItemValue = keyArray_[keyIndex].Value;
+            int newHeadItemKey = pointerArray_[pointerIndex].Key;
+            int newHeadItemValue = pointerArray_[pointerIndex].Value;
 
             /* Increment the frequency count, checking for overflow. */
             try {
@@ -63,21 +63,21 @@ namespace ParksComputing.SetAssociativeCache {
                 newHeadItemValue = 1;
             }
 
-            keyArray_[keyIndex] = new KeyValuePair<int, int>(newHeadItemKey, newHeadItemValue);
-            Array.Sort(keyArray_, headIndex, ways_, lfuComparer_);
+            pointerArray_[pointerIndex] = new KeyValuePair<int, int>(newHeadItemKey, newHeadItemValue);
+            Array.Sort(pointerArray_, headIndex, ways_, lfuComparer_);
         }
 
         /// <summary>
         /// Set an item's count to zero (removal from cache, for example), then sort the set based on all counts.
         /// </summary>
         /// <param name="set">The set in which the key is stored.</param>
-        /// <param name="keyIndex">The index into the key array.</param>
-        protected override void DemoteKey(int set, int keyIndex) {
+        /// <param name="pointerIndex">The index into the key array.</param>
+        protected override void DemoteKey(int set, int pointerIndex) {
             int headIndex = set * ways_;
-            int newTailItemKey = keyArray_[keyIndex].Key;
+            int newTailItemKey = pointerArray_[pointerIndex].Key;
             int newTailItemValue = 0;
-            keyArray_[keyIndex] = new KeyValuePair<int, int>(newTailItemKey, newTailItemValue);
-            Array.Sort(keyArray_, headIndex, ways_, lfuComparer_);
+            pointerArray_[pointerIndex] = new KeyValuePair<int, int>(newTailItemKey, newTailItemValue);
+            Array.Sort(pointerArray_, headIndex, ways_, lfuComparer_);
         }
 
         /* Comparer object used to sort items in indexArray in LFU order. */

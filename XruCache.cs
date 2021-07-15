@@ -30,41 +30,41 @@ namespace ParksComputing.SetAssociativeCache {
         /// necessary according to the details of the cache policy.
         /// </summary>
         /// <param name="set">Which set to update.</param>
-        /// <param name="keyIndex">The offset into the set to update.</param>
-        override protected void UpdateSet(int set, int keyIndex) {
-            PromoteKey(set, keyIndex);
+        /// <param name="pointerIndex">The offset into the set to update.</param>
+        override protected void UpdateSet(int set, int pointerIndex) {
+            PromoteKey(set, pointerIndex);
         }
 
         /// <summary>
         /// Move the key in the given set at the given offset to the front of the set. 
         /// </summary>
         /// <param name="set">The set in which the key is stored.</param>
-        /// <param name="keyIndex">The index into the key array.</param>
-        protected override void PromoteKey(int set, int keyIndex) {
+        /// <param name="pointerIndex">The index into the key array.</param>
+        protected override void PromoteKey(int set, int pointerIndex) {
             int headIndex = set * ways_;
-            int setOffset = keyIndex % ways_;
-            int newHeadItemKey = keyArray_[keyIndex].Key;
-            int newHeadItemValue = keyArray_[keyIndex].Value;
+            int setOffset = pointerIndex % ways_;
+            int newHeadItemKey = pointerArray_[pointerIndex].Key;
+            int newHeadItemValue = pointerArray_[pointerIndex].Value;
             /* Move the key to the lowest index in the set. */
-            System.Array.Copy(keyArray_, headIndex, keyArray_, headIndex + 1, setOffset);
-            keyArray_[headIndex] = new KeyValuePair<int, int>(newHeadItemKey, newHeadItemValue);
+            System.Array.Copy(pointerArray_, headIndex, pointerArray_, headIndex + 1, setOffset);
+            pointerArray_[headIndex] = new KeyValuePair<int, int>(newHeadItemKey, newHeadItemValue);
         }
 
         /// <summary>
         /// Move the key in the given set at the given offset to the end of the set. 
         /// </summary>
         /// <param name="set">The set in which the key is stored.</param>
-        /// <param name="keyIndex">The index into the key array.</param>
-        protected override void DemoteKey(int set, int keyIndex) {
+        /// <param name="pointerIndex">The index into the key array.</param>
+        protected override void DemoteKey(int set, int pointerIndex) {
             int headIndex = set * ways_;
-            int setOffset = keyIndex % ways_;
+            int setOffset = pointerIndex % ways_;
             int tailIndex = headIndex + ways_ - 1;
             int count = ways_ - setOffset - 1;
-            int newTailItemKey = keyArray_[keyIndex].Key;
-            int newTailItemValue = keyArray_[keyIndex].Value;
+            int newTailItemKey = pointerArray_[pointerIndex].Key;
+            int newTailItemValue = pointerArray_[pointerIndex].Value;
             /* Move the key to the highest index in the set. */
-            System.Array.Copy(keyArray_, keyIndex + 1, keyArray_, keyIndex, count);
-            keyArray_[tailIndex] = new KeyValuePair<int, int>(newTailItemKey, newTailItemValue);
+            System.Array.Copy(pointerArray_, pointerIndex + 1, pointerArray_, pointerIndex, count);
+            pointerArray_[tailIndex] = new KeyValuePair<int, int>(newTailItemKey, newTailItemValue);
         }
     }
 }
