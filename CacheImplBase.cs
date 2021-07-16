@@ -200,6 +200,8 @@ namespace ParksComputing.SetAssociativeCache {
             /* If we get here, then the set is full. Evict the appropriate element depending on 
             policy, then add the new value at that offset. */
 
+            --count_;
+
             var setBegin = set * ways_; 
             /* The ReplacementOffset property gives us the offset into the set for the key that will be evicted. */
             int newKeyIndex = setBegin + ReplacementOffset;
