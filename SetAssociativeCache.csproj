@@ -15,4 +15,10 @@
     <None Remove="SetAssociativeCacheTests\**" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Compile Remove="CacheImplLinkedListBase.cs" />
+    <Compile Remove="LruLinkedListCache.cs" />
+    <Compile Remove="XruLinkedListCache.cs" />
+  </ItemGroup>
+
 </Project>
