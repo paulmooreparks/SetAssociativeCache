@@ -381,6 +381,7 @@ namespace ParksComputing.SetAssociativeCache {
                     ++version_;
                     pointerArray_[pointerIndex] = new KeyValuePair<int, int>(EMPTY_MARKER, pointerArray_[pointerIndex].Value);
                     DemoteKey(set, pointerIndex);
+                    --count_;
                     return true;
                 }
             }

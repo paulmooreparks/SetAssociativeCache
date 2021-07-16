@@ -4,6 +4,7 @@ using System;
 using NUnit.Framework;
 
 using ParksComputing.SetAssociativeCache;
+using System.Collections.Generic;
 
 namespace SetAssociativeCacheTests {
     /*
@@ -94,7 +95,14 @@ namespace SetAssociativeCacheTests {
             Assert.IsTrue(cache.Count == 2);
             Assert.IsTrue(cache.ContainsKey(38));
             Assert.IsTrue(cache.ContainsKey(34));
+            Assert.IsTrue(cache.Contains(new KeyValuePair<int, int>(38, 9)));
             Assert.IsFalse(cache.ContainsKey(88));
+
+            Assert.IsTrue(cache.Remove(38));
+            Assert.IsTrue(cache.Remove(new KeyValuePair<int,int>(34,123)));
+            Assert.IsFalse(cache.Remove(88));
+            Assert.IsTrue(cache.Count == 0);
+            Assert.IsTrue(cache.Capacity == 16);
         }
 
         [Test]
@@ -106,14 +114,20 @@ namespace SetAssociativeCacheTests {
 
             //Set, Eggs, Ham
             cache["Eggs"] = "Ham";
+            Assert.IsTrue(cache.Count == 1);
+
             //Set, Sam, Iam
             cache["Sam"] = "Iam";
+
+            Assert.IsTrue(cache.Count == 2);
 
             Assert.IsTrue(cache.TryGetEvictKey("Green", out string evictKey));
             Assert.IsTrue(evictKey.Equals("Eggs"));
 
             //Set, Green, EggsAndHam
             cache["Green"] = "EggsAndHam";
+
+            Assert.IsTrue(cache.Count == 2);
 
             //Get, Sam
             Assert.IsTrue(cache.TryGetValue("Sam", out value));
@@ -125,8 +139,18 @@ namespace SetAssociativeCacheTests {
             Assert.IsFalse(cache.ContainsKey("Eggs"));
             //ContainsKey, Sam
             Assert.IsTrue(cache.ContainsKey("Sam"));
+            Assert.IsFalse(cache.Contains(new KeyValuePair<string, string>("Eggs", "Ham")));
+            Assert.IsTrue(cache.Contains(new KeyValuePair<string, string>("Sam", "Iam")));
+
             //ContainsKey, Green
             Assert.IsTrue(cache.ContainsKey("Green"));
+
+            Assert.IsFalse(cache.Remove("Eggs"));
+            Assert.IsTrue(cache.Remove("Sam"));
+            Assert.IsTrue(cache.Remove(new KeyValuePair<string, string>("Green", "EggsAndHam")));
+
+            Assert.IsTrue(cache.Count == 0);
+            Assert.IsTrue(cache.Capacity == 2);
         }
 
         [Test]
@@ -138,14 +162,20 @@ namespace SetAssociativeCacheTests {
 
             //Set, Eggs, Ham
             cache["Eggs"] = "Ham";
+
+            Assert.IsTrue(cache.Count == 1);
+
             //Set, Sam, Iam
             cache["Sam"] = "Iam";
 
+            Assert.IsTrue(cache.Count == 2);
             Assert.IsTrue(cache.TryGetEvictKey("Green", out string evictKey));
             Assert.IsTrue(evictKey.Equals("Sam"));
 
             //Set, Green, EggsAndHam
             cache["Green"] = "EggsAndHam";
+
+            Assert.IsTrue(cache.Count == 2);
 
             //Get, Eggs
             Assert.IsTrue(cache.TryGetValue("Eggs", out value));
@@ -154,10 +184,19 @@ namespace SetAssociativeCacheTests {
 
             //ContainsKey, Eggs
             Assert.IsTrue(cache.ContainsKey("Eggs"));
+            Assert.IsTrue(cache.Contains(new KeyValuePair<string, string>("Eggs", "Ham")));
             //ContainsKey, Sam
             Assert.IsFalse(cache.ContainsKey("Sam"));
+            Assert.IsFalse(cache.Contains(new KeyValuePair<string, string>("Sam", "Iam")));
             //ContainsKey, Green
             Assert.IsTrue(cache.ContainsKey("Green"));
+
+            Assert.IsTrue(cache.Remove("Eggs"));
+            Assert.IsFalse(cache.Remove("Sam"));
+            Assert.IsTrue(cache.Remove(new KeyValuePair<string, string>("Green", "EggsAndHam")));
+
+            Assert.IsTrue(cache.Count == 0);
+            Assert.IsTrue(cache.Capacity == 2);
         }
 
     }
