@@ -106,6 +106,54 @@ namespace SetAssociativeCacheTests {
         }
 
         [Test]
+        public void LfuHamAndEggs() {
+            string value;
+
+            var cache = new LfuCache<string, string>(1, 2);
+
+            //Set, Eggs, Ham
+            cache["Eggs"] = "Ham";
+            Assert.IsTrue(cache.Count == 1);
+
+            //Set, Sam, Iam
+            cache["Sam"] = "Iam";
+
+            Assert.IsTrue(cache.Count == 2);
+
+            Assert.IsTrue(cache.ContainsKey("Eggs"));
+            Assert.IsTrue(cache.TryGetEvictKey("Green", out string evictKey));
+            Assert.IsFalse(evictKey.Equals("Eggs"));
+
+            //Set, Green, EggsAndHam
+            cache["Green"] = "EggsAndHam";
+
+            Assert.IsTrue(cache.Count == 2);
+
+            //Get, Sam
+            Assert.IsFalse(cache.TryGetValue("Sam", out value));
+
+            //Get, Green
+            Assert.IsTrue(cache.TryGetValue("Green", out value));
+
+            //ContainsKey, Eggs
+            Assert.IsTrue(cache.ContainsKey("Eggs"));
+            //ContainsKey, Sam
+            Assert.IsFalse(cache.ContainsKey("Sam"));
+            Assert.IsTrue(cache.Contains(new KeyValuePair<string, string>("Eggs", "Ham")));
+            Assert.IsFalse(cache.Contains(new KeyValuePair<string, string>("Sam", "Iam")));
+
+            //ContainsKey, Green
+            Assert.IsTrue(cache.ContainsKey("Green"));
+
+            Assert.IsTrue(cache.Remove("Eggs"));
+            Assert.IsFalse(cache.Remove("Sam"));
+            Assert.IsTrue(cache.Remove(new KeyValuePair<string, string>("Green", "EggsAndHam")));
+
+            Assert.IsTrue(cache.Count == 0);
+            Assert.IsTrue(cache.Capacity == 2);
+        }
+
+        [Test]
         public void LruHamAndEggs() {
             string value;
 
