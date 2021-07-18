@@ -187,7 +187,7 @@ namespace ParksComputing.SetAssociativeCache {
                     is marked as empty and the index still points to the same location. So, in 
                     either case, we want to use the index stored in the pointer array at the given 
                     location. */
-                    valueIndex = pointerArray_[pointerIndex].Key;
+                    valueIndex = pointerIndex;
                     /* Create a new entry in the key array. */
                     pointerArray_[pointerIndex] = new KeyValuePair<int, int>(valueIndex, pointerArray_[pointerIndex].Value);
                     /* Delegate adding the cache item and managing the data for the cache policy 
