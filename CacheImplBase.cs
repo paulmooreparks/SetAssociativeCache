@@ -168,26 +168,30 @@ namespace ParksComputing.SetAssociativeCache {
             var set = FindSet(key);
             int valueIndex; // Index into the value array where the actual cache item (key/value pair) is stored
 
-            /* Get the first array index for the set; in other words, where in the array does the set start? */
+            /* Get the first array index for the set; in other words, where in the array does the 
+            set start? */
             var setBegin = set * ways_;
+            var setEnd = setBegin + ways_;
+            int pointerIndex; // Actual array location in the key array
 
-            int setOffset; // Offset into the set in the index array for where the key is stored
-            int pointerIndex; // Actual array location in the key array for setOffset
-
-            /* Loop over the set, incrementing both the set offset (setOffset) and the pointer-array index (pointerIndex) */
-            for (setOffset = 0, pointerIndex = setBegin; setOffset < ways_; ++setOffset, ++pointerIndex) {
+            /* Loop over the set */
+            for (pointerIndex = setBegin; pointerIndex < setEnd; ++pointerIndex) {
                 /* Get the index into the value array */
                 valueIndex = pointerArray_[pointerIndex].Key;
 
                 /* If the index is a sentinel value for "nothing stored here"... */
                 if (valueIndex == EMPTY_MARKER) {
-                    /* When the slots in a set are being filled initially, the index of each empty spot in the set in 
-                    the key index corresponds to the index of the empty spot in the set in the value index. Therefore, 
-                    we set the value index to the current key index. */
-                    valueIndex = count_;
+                    /* When the slots in a set are being filled initially, the index of each empty 
+                    spot in the set in the key index corresponds to the index of the empty spot in 
+                    the set in the value index. When a cached item has been removed, the pointer 
+                    is marked as empty and the index still points to the same location. So, in 
+                    either case, we want to use the index stored in the pointer array at the given 
+                    location. */
+                    valueIndex = pointerArray_[pointerIndex].Key;
                     /* Create a new entry in the key array. */
                     pointerArray_[pointerIndex] = new KeyValuePair<int, int>(valueIndex, pointerArray_[pointerIndex].Value);
-                    /* Delegate adding the cache item and managing the data for the cache policy to the Add method. */
+                    /* Delegate adding the cache item and managing the data for the cache policy 
+                    to the Add method. */
                     Add(key, value, set, pointerIndex, valueIndex);
                     return;
                 }
@@ -196,7 +200,8 @@ namespace ParksComputing.SetAssociativeCache {
                 if (valueArray_[valueIndex].Key.Equals(key)) {
                     /* We'll replace the value in the item array with this value. */
                     valueIndex = pointerArray_[pointerIndex].Key;
-                    /* Delegate adding the cache item and managing the data for the cache policy to the Add method. */
+                    /* Delegate adding the cache item and managing the data for the cache policy 
+                    to the Add method. */
                     Add(key, value, set, pointerIndex, valueIndex);
                     return;
                 }
@@ -207,12 +212,14 @@ namespace ParksComputing.SetAssociativeCache {
 
             --count_;
 
-            /* The ReplacementOffset property gives us the offset into the set for the key that will be evicted. */
+            /* The ReplacementOffset property gives us the offset into the set for the key that 
+            will be evicted. */
             int newKeyIndex = setBegin + ReplacementOffset;
 
             /* Get the index into the value array for where the evicted cache item is stored. */
             valueIndex = pointerArray_[newKeyIndex].Key;
-            /* Delegate adding the cache item and managing the data for the cache policy to the Add method. */
+            /* Delegate adding the cache item and managing the data for the cache policy to the 
+            Add method. */
             Add(key, value, set, newKeyIndex, valueIndex);
             return;
         }
@@ -239,14 +246,15 @@ namespace ParksComputing.SetAssociativeCache {
             }
 
             var set = FindSet(key);
-            /* Get the first array index for the set; in other words, where in the array does the set start? */
+
+            /* Get the first array index for the set; in other words, where in the array does the 
+            set start? */
             var setBegin = set * ways_;
+            var setEnd = setBegin + ways_;
+            int pointerIndex; // Actual array location in the key array
 
-            int setOffset; // Offset into the set in the index array for where the key is stored
-            int pointerIndex; // Actual array location in the key array for setOffset
-
-            /* Loop over the set, incrementing both the set offset (setOffset) and the pointer-array index (pointerIndex) */
-            for (setOffset = 0, pointerIndex = setBegin; setOffset < ways_; ++setOffset, ++pointerIndex) {
+            /* Loop over the set */
+            for (pointerIndex = setBegin; pointerIndex < setEnd; ++pointerIndex) {
                 int valueIndex = pointerArray_[pointerIndex].Key;
 
                 /* If the key is found in the value array... */
@@ -268,14 +276,15 @@ namespace ParksComputing.SetAssociativeCache {
         /// <returns>true if item is found in the System.Collections.Generic.ICollection; otherwise, false.</returns>
         public virtual bool Contains(KeyValuePair<TKey, TValue> item) {
             var set = FindSet(item.Key);
-            /* Get the first array index for the set; in other words, where in the array does the set start? */
+
+            /* Get the first array index for the set; in other words, where in the array does the 
+            set start? */
             var setBegin = set * ways_;
+            var setEnd = setBegin + ways_;
+            int pointerIndex; // Actual array location in the key array
 
-            int setOffset; // Offset into the set in the index array for where the key is stored
-            int pointerIndex; // Actual array location in the key array for setOffset
-
-            /* Loop over the set, incrementing both the set offset (setOffset) and the pointer-array index (pointerIndex) */
-            for (setOffset = 0, pointerIndex = setBegin; setOffset < ways_; ++setOffset, ++pointerIndex) {
+            /* Loop over the set */
+            for (pointerIndex = setBegin; pointerIndex < setEnd; ++pointerIndex) {
                 int valueIndex = pointerArray_[pointerIndex].Key;
 
                 /* If the key is found in the value array, and the value at that key matches the provided value... */
@@ -311,14 +320,15 @@ namespace ParksComputing.SetAssociativeCache {
             }
 
             var set = FindSet(key);
-            /* Get the first array index for the set; in other words, where in the array does the set start? */
+
+            /* Get the first array index for the set; in other words, where in the array does the 
+            set start? */
             var setBegin = set * ways_;
+            var setEnd = setBegin + ways_;
+            int pointerIndex; // Actual array location in the key array
 
-            int setOffset; // Offset into the set in the index array for where the key is stored
-            int pointerIndex; // Actual array location in the key array for setOffset
-
-            /* Loop over the set, incrementing both the set offset (setOffset) and the pointer-array index (pointerIndex) */
-            for (setOffset = 0, pointerIndex = setBegin; setOffset < ways_; ++setOffset, ++pointerIndex) {
+            /* Loop over the set */
+            for (pointerIndex = setBegin; pointerIndex < setEnd; ++pointerIndex) {
                 int valueIndex = pointerArray_[pointerIndex].Key;
 
                 /* If the key is found in the value array... */
@@ -349,14 +359,15 @@ namespace ParksComputing.SetAssociativeCache {
             }
 
             var set = FindSet(key);
-            /* Get the first array index for the set; in other words, where in the array does the set start? */
+
+            /* Get the first array index for the set; in other words, where in the array does the 
+            set start? */
             var setBegin = set * ways_;
+            var setEnd = setBegin + ways_;
+            int pointerIndex; // Actual array location in the key array
 
-            int setOffset; // Offset into the set in the index array for where the key is stored
-            int pointerIndex; // Actual array location in the key array for setOffset
-
-            /* Loop over the set, incrementing both the set offset (setOffset) and the pointer-array index (pointerIndex) */
-            for (setOffset = 0, pointerIndex = setBegin; setOffset < ways_; ++setOffset, ++pointerIndex) {
+            /* Loop over the set */
+            for (pointerIndex = setBegin; pointerIndex < setEnd; ++pointerIndex) {
                 int valueIndex = pointerArray_[pointerIndex].Key;
 
                 if (valueIndex != EMPTY_MARKER && valueArray_[valueIndex].Key.Equals(key)) {
@@ -388,14 +399,15 @@ namespace ParksComputing.SetAssociativeCache {
         /// </returns>
         public virtual bool Remove(KeyValuePair<TKey, TValue> item) {
             var set = FindSet(item.Key);
-            /* Get the first array index for the set; in other words, where in the array does the set start? */
+
+            /* Get the first array index for the set; in other words, where in the array does the 
+            set start? */
             var setBegin = set * ways_;
+            var setEnd = setBegin + ways_;
+            int pointerIndex; // Actual array location in the key array
 
-            int setOffset; // Offset into the set in the index array for where the key is stored
-            int pointerIndex; // Actual array location in the key array for setOffset
-
-            /* Loop over the set, incrementing both the set offset (setOffset) and the pointer-array index (pointerIndex) */
-            for (setOffset = 0, pointerIndex = setBegin; setOffset < ways_; ++setOffset, ++pointerIndex) {
+            /* Loop over the set */
+            for (pointerIndex = setBegin; pointerIndex < setEnd; ++pointerIndex) {
                 int valueIndex = pointerArray_[pointerIndex].Key;
 
                 if (valueIndex != EMPTY_MARKER &&
@@ -611,18 +623,18 @@ namespace ParksComputing.SetAssociativeCache {
                 throw new ArgumentNullException(nameof(key));
             }
 
+            int valueIndex; // Index into the value array where the actual cache item (key/value pair) is stored
+
             /* Get the number of the set that would contain the new key. */
             var set = FindSet(key);
-            int valueIndex; // Index into the value array where the actual cache item (key/value pair) is stored
 
             /* Get the first array index for the set; in other words, where in the array does the set start? */
             var setBegin = set * ways_;
+            var setEnd = setBegin + ways_;
+            int pointerIndex; // Actual array location in the key array
 
-            int setOffset; // Offset into the set in the index array for where the key is stored
-            int pointerIndex; // Actual array location in the key array for setOffset
-
-            /* Loop over the set, incrementing both the set offset (setOffset) and the pointer-array index (pointerIndex) */
-            for (setOffset = 0, pointerIndex = setBegin; setOffset < ways_; ++setOffset, ++pointerIndex) {
+            /* Loop over the set */
+            for (pointerIndex = setBegin; pointerIndex < setEnd; ++pointerIndex) {
                 valueIndex = pointerArray_[pointerIndex].Key;
 
                 /* If the slot is empty, no eviction. */
@@ -646,34 +658,17 @@ namespace ParksComputing.SetAssociativeCache {
         }
 
         /// <summary>
-        /// Convert a given key to a hash value.
-        /// </summary>
-        /// <param name="key">The key to hash.</param>
-        /// <returns>The hash value for the given key.</returns>
-        ulong GetHashCode(TKey key) {
-            const ulong offsetBasis = 14695981039346656037;
-            const ulong prime = 1099511628211;
-
-            ulong hash = offsetBasis;
-
-            char[] chars = key.ToString().ToCharArray();
-
-            foreach (char c in chars) {
-                hash *= prime;
-                hash ^= c;
-            }
-
-            return hash;
-        }
-
-        /// <summary>
-        /// Given a key, find the set into which the key should be placed. Since this is an 
-        /// internal function, the <paramref name="key"/> parameter is assumed to be not null.
+        /// Given a key, find the set into which the key should be placed.
         /// </summary>
         /// <param name="key">The key used to find the appropriate set.</param>
+        /// <exception cref="System.ArgumentNullException">key is null.</exception>
         /// <returns>The set in which the key should be kept.</returns>
         protected int FindSet(TKey key) {
-            ulong keyHash = GetHashCode(key);
+            if (key == null) {
+                throw new ArgumentNullException(nameof(key));
+            }
+
+            ulong keyHash = key.GetHashValue();
             return (int)(keyHash % (ulong)sets_);
         }
 
@@ -685,7 +680,12 @@ namespace ParksComputing.SetAssociativeCache {
         /// <param name="set">The set in which to add the element.</param>
         /// <param name="pointerIndex">The index into the key array at which to add the element's value index.</param>
         /// <param name="valueIndex">The index into the item array at which the element is stored.</param>
+        /// <exception cref="System.ArgumentNullException">key is null.</exception>
         protected void Add(TKey key, TValue value, int set, int pointerIndex, int valueIndex) {
+            if (key == null) {
+                throw new ArgumentNullException(nameof(key));
+            }
+
             /* Invalidate any outstanding interators. */
             ++version_;
             /* Store the key/value pair at the designated location in the value array. */

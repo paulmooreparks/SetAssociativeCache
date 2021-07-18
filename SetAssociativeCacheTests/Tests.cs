@@ -99,21 +99,21 @@ namespace SetAssociativeCacheTests {
             KeyValuePair<string, string>[] pairArray = new KeyValuePair<string, string>[cache.Capacity];
             cache.CopyTo(pairArray, 0);
 
-            Assert.IsTrue(pairArray[0].Key == "key11");
-            Assert.IsTrue(pairArray[1].Key == "key06");
+            Assert.IsTrue(pairArray[0].Key == "key08");
+            Assert.IsTrue(pairArray[1].Key == "key04");
             Assert.IsTrue(pairArray[2].Key == "key10");
             Assert.IsTrue(pairArray[3].Key == "key07");
-            Assert.IsTrue(pairArray[4].Key == "key08");
-            Assert.IsTrue(pairArray[5].Key == "key04");
+            Assert.IsTrue(pairArray[4].Key == "key11");
+            Assert.IsTrue(pairArray[5].Key == "key06");
             Assert.IsTrue(pairArray[6].Key == "key12");
             Assert.IsTrue(pairArray[7].Key == "key09");
 
-            Assert.IsTrue(pairArray[0].Value == "value11");
-            Assert.IsTrue(pairArray[1].Value == "value06");
+            Assert.IsTrue(pairArray[0].Value == "value08");
+            Assert.IsTrue(pairArray[1].Value == "value04");
             Assert.IsTrue(pairArray[2].Value == "value10");
             Assert.IsTrue(pairArray[3].Value == "value07");
-            Assert.IsTrue(pairArray[4].Value == "value08");
-            Assert.IsTrue(pairArray[5].Value == "value04");
+            Assert.IsTrue(pairArray[4].Value == "value11");
+            Assert.IsTrue(pairArray[5].Value == "value06");
             Assert.IsTrue(pairArray[6].Value == "value12");
             Assert.IsTrue(pairArray[7].Value == "value09");
         }
