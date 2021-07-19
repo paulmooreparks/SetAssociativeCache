@@ -29,7 +29,7 @@ namespace SetAssociativeCacheTests {
             var cache2 = new LruCache<string, string>(64, 4);
             Assert.IsTrue(cache2.Sets == 64);
             Assert.IsTrue(cache2.Ways == 4);
-            Assert.IsTrue(cache1.Capacity == cache2.Sets * cache2.Ways);
+            Assert.IsTrue(cache2.Capacity == cache2.Sets * cache2.Ways);
             Assert.IsTrue(cache2.Count == 0);
             Assert.IsTrue(cache2.Keys.Count == 0);
             Assert.IsTrue(cache2.Values.Count == 0);
@@ -38,7 +38,7 @@ namespace SetAssociativeCacheTests {
             var cache3 = new MruCache<string, string>(64, 4);
             Assert.IsTrue(cache3.Sets == 64);
             Assert.IsTrue(cache3.Ways == 4);
-            Assert.IsTrue(cache1.Capacity == cache3.Sets * cache3.Ways);
+            Assert.IsTrue(cache3.Capacity == cache3.Sets * cache3.Ways);
             Assert.IsTrue(cache3.Count == 0);
             Assert.IsTrue(cache3.Keys.Count == 0);
             Assert.IsTrue(cache3.Values.Count == 0);
@@ -200,6 +200,50 @@ namespace SetAssociativeCacheTests {
             Assert.IsTrue(pairArray[5].Key == "key06");
             Assert.IsTrue(pairArray[6].Key == "key16");
             Assert.IsTrue(pairArray[7].Key == "key09");
+
+            cache.Clear();
+
+            Assert.IsTrue(cache.Sets == 4);
+            Assert.IsTrue(cache.Ways == 2);
+            Assert.IsTrue(cache.Capacity == cache.Sets * cache.Ways);
+            Assert.IsTrue(cache.Count == 0);
+            Assert.IsTrue(cache.Keys.Count == 0);
+            Assert.IsTrue(cache.Values.Count == 0);
+            Assert.IsFalse(cache.IsReadOnly);
+
+            cache["key01"] = "value01";
+            cache["key02"] = "value02";
+            cache["key03"] = "value03";
+            cache["key04"] = "value04";
+            cache["key05"] = "value05";
+            cache["key06"] = "value06";
+            cache["key07"] = "value07";
+            cache["key08"] = "value08";
+            cache["key09"] = "value09";
+            cache["key10"] = "value10";
+            cache["key11"] = "value11";
+            cache["key12"] = "value12";
+
+            Array.Clear(pairArray, 0, pairArray.Length);
+            cache.CopyTo(pairArray, 0);
+
+            Assert.IsTrue(pairArray[0].Key == "key08");
+            Assert.IsTrue(pairArray[1].Key == "key04");
+            Assert.IsTrue(pairArray[2].Key == "key10");
+            Assert.IsTrue(pairArray[3].Key == "key07");
+            Assert.IsTrue(pairArray[4].Key == "key11");
+            Assert.IsTrue(pairArray[5].Key == "key06");
+            Assert.IsTrue(pairArray[6].Key == "key12");
+            Assert.IsTrue(pairArray[7].Key == "key09");
+
+            Assert.IsTrue(pairArray[0].Value == "value08");
+            Assert.IsTrue(pairArray[1].Value == "value04");
+            Assert.IsTrue(pairArray[2].Value == "value10");
+            Assert.IsTrue(pairArray[3].Value == "value07");
+            Assert.IsTrue(pairArray[4].Value == "value11");
+            Assert.IsTrue(pairArray[5].Value == "value06");
+            Assert.IsTrue(pairArray[6].Value == "value12");
+            Assert.IsTrue(pairArray[7].Value == "value09");
         }
 
         [Test]
@@ -377,6 +421,50 @@ namespace SetAssociativeCacheTests {
             Assert.IsTrue(pairArray[5].Key == "key15");
             Assert.IsTrue(pairArray[6].Key == "key09");
             Assert.IsTrue(pairArray[7].Key == "key16");
+
+            cache.Clear();
+
+            Assert.IsTrue(cache.Sets == 4);
+            Assert.IsTrue(cache.Ways == 2);
+            Assert.IsTrue(cache.Capacity == cache.Sets * cache.Ways);
+            Assert.IsTrue(cache.Count == 0);
+            Assert.IsTrue(cache.Keys.Count == 0);
+            Assert.IsTrue(cache.Values.Count == 0);
+            Assert.IsFalse(cache.IsReadOnly);
+
+            cache["key01"] = "value01";
+            cache["key02"] = "value02";
+            cache["key03"] = "value03";
+            cache["key04"] = "value04";
+            cache["key05"] = "value05";
+            cache["key06"] = "value06";
+            cache["key07"] = "value07";
+            cache["key08"] = "value08";
+            cache["key09"] = "value09";
+            cache["key10"] = "value10";
+            cache["key11"] = "value11";
+            cache["key12"] = "value12";
+
+            Array.Clear(pairArray, 0, pairArray.Length);
+            cache.CopyTo(pairArray, 0);
+
+            Assert.IsTrue(pairArray[0].Key == "key04");
+            Assert.IsTrue(pairArray[1].Key == "key08");
+            Assert.IsTrue(pairArray[2].Key == "key10");
+            Assert.IsTrue(pairArray[3].Key == "key03");
+            Assert.IsTrue(pairArray[4].Key == "key11");
+            Assert.IsTrue(pairArray[5].Key == "key02");
+            Assert.IsTrue(pairArray[6].Key == "key09");
+            Assert.IsTrue(pairArray[7].Key == "key12");
+
+            Assert.IsTrue(pairArray[0].Value == "value04");
+            Assert.IsTrue(pairArray[1].Value == "value08");
+            Assert.IsTrue(pairArray[2].Value == "value10");
+            Assert.IsTrue(pairArray[3].Value == "value03");
+            Assert.IsTrue(pairArray[4].Value == "value11");
+            Assert.IsTrue(pairArray[5].Value == "value02");
+            Assert.IsTrue(pairArray[6].Value == "value09");
+            Assert.IsTrue(pairArray[7].Value == "value12");
         }
 
         [Test]
@@ -521,6 +609,50 @@ namespace SetAssociativeCacheTests {
             Assert.IsTrue(pairArray[5].Key == "key02");
             Assert.IsTrue(pairArray[6].Key == "key16");
             Assert.IsTrue(pairArray[7].Key == "key01");
+
+            cache.Clear();
+
+            Assert.IsTrue(cache.Sets == 4);
+            Assert.IsTrue(cache.Ways == 2);
+            Assert.IsTrue(cache.Capacity == cache.Sets * cache.Ways);
+            Assert.IsTrue(cache.Count == 0);
+            Assert.IsTrue(cache.Keys.Count == 0);
+            Assert.IsTrue(cache.Values.Count == 0);
+            Assert.IsFalse(cache.IsReadOnly);
+
+            cache["key01"] = "value01";
+            cache["key02"] = "value02";
+            cache["key03"] = "value03";
+            cache["key04"] = "value04";
+            cache["key05"] = "value05";
+            cache["key06"] = "value06";
+            cache["key07"] = "value07";
+            cache["key08"] = "value08";
+            cache["key09"] = "value09";
+            cache["key10"] = "value10";
+            cache["key11"] = "value11";
+            cache["key12"] = "value12";
+
+            Array.Clear(pairArray, 0, pairArray.Length);
+            cache.CopyTo(pairArray, 0);
+
+            Assert.IsTrue(pairArray[0].Key == "key08");
+            Assert.IsTrue(pairArray[1].Key == "key04");
+            Assert.IsTrue(pairArray[2].Key == "key10");
+            Assert.IsTrue(pairArray[3].Key == "key03");
+            Assert.IsTrue(pairArray[4].Key == "key11");
+            Assert.IsTrue(pairArray[5].Key == "key02");
+            Assert.IsTrue(pairArray[6].Key == "key12");
+            Assert.IsTrue(pairArray[7].Key == "key01");
+
+            Assert.IsTrue(pairArray[0].Value == "value08");
+            Assert.IsTrue(pairArray[1].Value == "value04");
+            Assert.IsTrue(pairArray[2].Value == "value10");
+            Assert.IsTrue(pairArray[3].Value == "value03");
+            Assert.IsTrue(pairArray[4].Value == "value11");
+            Assert.IsTrue(pairArray[5].Value == "value02");
+            Assert.IsTrue(pairArray[6].Value == "value12");
+            Assert.IsTrue(pairArray[7].Value == "value01");
         }
 
         [Test]
