@@ -21,6 +21,6 @@ namespace ParksComputing.SetAssociativeCache {
         /// <summary>
         /// The offset into the set for the item which should be evicted from the cache.
         /// </summary>
-        protected override int ReplacementOffset => ways_ - 1; // LFU is at the highest index in the set
+        protected override int ReplacementOffset => ways_ - 1; // LFU is at the lowest index in the set
     }
 }

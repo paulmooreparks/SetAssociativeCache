@@ -34,13 +34,13 @@ namespace ParksComputing.SetAssociativeCache {
         /// <param name="set">Which set to update.</param>
         /// <param name="pointerIndex">The index into the key array.</param>
         override protected void UpdateSet(int set, int pointerIndex) {
-            int headIndex = set * ways_;
-            int setOffset = pointerIndex % ways_;
-
-            /* The new index is moved to the front with a count of 1. */
-            var newHeadItem = new KeyValuePair<int, int>(pointerArray_[pointerIndex].Key, 1);
-            System.Array.Copy(pointerArray_, headIndex, pointerArray_, headIndex + 1, setOffset);
-            pointerArray_[headIndex] = newHeadItem;
+            //int headIndex = set * ways_;
+            //int len = ways_ - 1;
+            //int tailIndex = headIndex + ways_ - 1;
+            //var newTailItem = new KeyValuePair<int, int>(pointerArray_[pointerIndex].Key, 1);
+            //System.Array.Copy(pointerArray_, headIndex + 1, pointerArray_, headIndex, len);
+            //pointerArray_[tailIndex] = newTailItem;
+            PromoteKey(set, pointerIndex);
         }
 
         /// <summary>
@@ -89,16 +89,16 @@ namespace ParksComputing.SetAssociativeCache {
         internal class XfuComparer : Comparer<KeyValuePair<int, int>> {
             // Compares by Length, Height, and Width.
             public override int Compare(KeyValuePair<int, int> x, KeyValuePair<int, int> y) {
-                /* I reversed the sign of < and > because I want a reverse sort */
+                /* Reverse sort */
                 if (x.Value < y.Value) {
                     return 1;
                 }
-                else if (x.Value > y.Value) {
+                
+                if (x.Value > y.Value) {
                     return -1;
                 }
-                else {
-                    return 0;
-                }
+
+                return 0;
             }
         }
 

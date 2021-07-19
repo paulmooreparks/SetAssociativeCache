@@ -42,11 +42,11 @@ namespace ParksComputing.SetAssociativeCache {
         /// <param name="pointerIndex">The index into the key array.</param>
         protected override void PromoteKey(int set, int pointerIndex) {
             int headIndex = set * ways_;
-            int setOffset = pointerIndex % ways_;
+            int len = ways_ - 1;
             int newHeadItemKey = pointerArray_[pointerIndex].Key;
             int newHeadItemValue = pointerArray_[pointerIndex].Value;
             /* Move the key to the lowest index in the set. */
-            System.Array.Copy(pointerArray_, headIndex, pointerArray_, headIndex + 1, setOffset);
+            System.Array.Copy(pointerArray_, headIndex, pointerArray_, headIndex + 1, len);
             pointerArray_[headIndex] = new KeyValuePair<int, int>(newHeadItemKey, newHeadItemValue);
         }
 
