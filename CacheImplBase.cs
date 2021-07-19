@@ -54,7 +54,6 @@ namespace ParksComputing.SetAssociativeCache {
         public CacheImplBase(int sets, int ways) {
             sets_ = sets;
             ways_ = ways;
-            valueArray_ = new KeyValuePair<TKey, TValue>?[Capacity];
             Clear();
         }
 
@@ -591,10 +590,6 @@ namespace ParksComputing.SetAssociativeCache {
         /// Removes all items from the System.Collections.Generic.ICollection.
         /// </summary>
         public virtual void Clear() {
-            /* Keep in mind that the data aren't cleared. We are clearing the indices which point 
-            to the data. With no indices, the data aren't accessible. If you're storing secure 
-            data in the cache... well, just don't. If you must, then you'll need to change this. */
-
             /* Invalidate any outstanding interators. */
             ++version_;
             count_ = 0;
@@ -602,6 +597,7 @@ namespace ParksComputing.SetAssociativeCache {
             /* Wipe the key array. */
             pointerArray_ = new KeyValuePair<int, int>[Capacity];
             Array.Fill(pointerArray_, new KeyValuePair<int, int>(EMPTY_MARKER, 0));
+            valueArray_ = new KeyValuePair<TKey, TValue>?[Capacity];
         }
 
         /// <summary>
