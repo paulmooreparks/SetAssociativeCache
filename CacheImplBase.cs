@@ -41,7 +41,7 @@ namespace ParksComputing.SetAssociativeCache {
         at an index in this array, it stays there unless it is replaced with a new key/value pair or 
         copied out to the client of the cache. Otherwise, these data aren't rearranged or otherwise 
         messed with. */
-        protected KeyValuePair<TKey, TValue>[] valueArray_;
+        protected KeyValuePair<TKey, TValue>?[] valueArray_;
 
         /* This value is used as a sentinel to mark empty slots in the key array. */
         protected const int EMPTY_MARKER = int.MaxValue;
@@ -54,7 +54,7 @@ namespace ParksComputing.SetAssociativeCache {
         public CacheImplBase(int sets, int ways) {
             sets_ = sets;
             ways_ = ways;
-            valueArray_ = new KeyValuePair<TKey, TValue>[Capacity];
+            valueArray_ = new KeyValuePair<TKey, TValue>?[Capacity];
             Clear();
         }
 
@@ -181,15 +181,16 @@ namespace ParksComputing.SetAssociativeCache {
 
                 /* If the index is a sentinel value for "nothing stored here"... */
                 if (valueIndex == EMPTY_MARKER) {
-                    /* When the slots in a set are being filled initially, the index of each empty 
-                    spot in the set in the key index corresponds to the index of the empty spot in 
-                    the set in the value index. When a cached item has been removed, the pointer 
-                    is marked as empty and the index still points to the same location. So, in 
-                    either case, we want to use the index stored in the pointer array at the given 
-                    location. */
-                    valueIndex = pointerIndex;
+                    /* Find the first empty entry in the value array */
+                    valueIndex = setBegin;
+
+                    while (valueIndex < setEnd && valueArray_[valueIndex] != null) {
+                        ++valueIndex;
+                    }
+
                     /* Create a new entry in the key array. */
                     pointerArray_[pointerIndex] = new KeyValuePair<int, int>(valueIndex, pointerArray_[pointerIndex].Value);
+
                     /* Delegate adding the cache item and managing the data for the cache policy 
                     to the Add method. */
                     Add(key, value, set, pointerIndex, valueIndex);
@@ -197,7 +198,7 @@ namespace ParksComputing.SetAssociativeCache {
                 }
 
                 /* If the new key is equal to the key at the current position... */
-                if (valueArray_[valueIndex].Key.Equals(key)) {
+                if (valueArray_[valueIndex].Value.Key.Equals(key)) {
                     /* We'll replace the value in the item array with this value. */
                     valueIndex = pointerArray_[pointerIndex].Key;
                     /* Delegate adding the cache item and managing the data for the cache policy 
@@ -259,7 +260,7 @@ namespace ParksComputing.SetAssociativeCache {
 
                 /* If the key is found in the value array... */
                 if (valueIndex != EMPTY_MARKER &&
-                    valueArray_[valueIndex].Key.Equals(key)) {
+                    valueArray_[valueIndex].Value.Key.Equals(key)) {
                     /* "Touch" the key to note that it has been accessed. */
                     PromoteKey(set, pointerIndex);
                     return true;
@@ -289,8 +290,8 @@ namespace ParksComputing.SetAssociativeCache {
 
                 /* If the key is found in the value array, and the value at that key matches the provided value... */
                 if (valueIndex != EMPTY_MARKER &&
-                    valueArray_[valueIndex].Key.Equals(item.Key) &&
-                    valueArray_[valueIndex].Value.Equals(item.Value)) {
+                    valueArray_[valueIndex].Value.Key.Equals(item.Key) &&
+                    valueArray_[valueIndex].Value.Value.Equals(item.Value)) {
                     /* "Touch" the key to note that it has been accessed. */
                     PromoteKey(set, pointerIndex);
                     return true;
@@ -332,16 +333,16 @@ namespace ParksComputing.SetAssociativeCache {
                 int valueIndex = pointerArray_[pointerIndex].Key;
 
                 /* If the key is found in the value array... */
-                if (valueIndex != EMPTY_MARKER && valueArray_[valueIndex].Key.Equals(key)) {
+                if (valueIndex != EMPTY_MARKER && valueArray_[valueIndex].Value.Key.Equals(key)) {
                     /* "Touch" the key to note that it has been accessed. */
                     PromoteKey(set, pointerIndex);
                     /* Return the value found at this location in the value array. */
-                    value = valueArray_[valueIndex].Value;
+                    value = valueArray_[valueIndex].Value.Value;
                     return true;
                 }
             }
 
-            value = default(TValue);
+            value = default;
             return false;
         }
 
@@ -370,11 +371,9 @@ namespace ParksComputing.SetAssociativeCache {
             for (pointerIndex = setBegin; pointerIndex < setEnd; ++pointerIndex) {
                 int valueIndex = pointerArray_[pointerIndex].Key;
 
-                if (valueIndex != EMPTY_MARKER && valueArray_[valueIndex].Key.Equals(key)) {
-                    /* Since all access to the cache values goes through the index array first, 
-                    I'll try leaving the value in the cache and see how that goes. It's faster, 
-                    but for some reason it make me nervous. I suppose I could make value replacement 
-                    a feature of the policy class. */
+                if (valueIndex != EMPTY_MARKER && valueArray_[valueIndex].Value.Key.Equals(key)) {
+                    /* Clear the value from the cache */
+                    valueArray_[valueIndex] = null;
 
                     /* Invalidate any outstanding interators. */
                     ++version_;
@@ -411,12 +410,10 @@ namespace ParksComputing.SetAssociativeCache {
                 int valueIndex = pointerArray_[pointerIndex].Key;
 
                 if (valueIndex != EMPTY_MARKER &&
-                    valueArray_[valueIndex].Key.Equals(item.Key) &&
-                    valueArray_[valueIndex].Value.Equals(item.Value)) {
-                    /* Since all access to the cache values goes through the index array first, 
-                    I'll try leaving the value in the cache and see how that goes. It's faster, 
-                    but for some reason it make me nervous. I suppose I could make value replacement 
-                    a feature of the policy class. */
+                    valueArray_[valueIndex].Value.Key.Equals(item.Key) &&
+                    valueArray_[valueIndex].Value.Value.Equals(item.Value)) {
+                    /* Clear the value from the cache */
+                    valueArray_[valueIndex] = null;
 
                     /* Invalidate any outstanding interators. */
                     ++version_;
@@ -442,7 +439,7 @@ namespace ParksComputing.SetAssociativeCache {
 
                 foreach (var valueIndex in pointerArray_) {
                     if (valueIndex.Key != EMPTY_MARKER) {
-                        value.Add(valueArray_[valueIndex.Key].Key);
+                        value.Add(valueArray_[valueIndex.Key].Value.Key);
                     }
                 }
 
@@ -462,7 +459,7 @@ namespace ParksComputing.SetAssociativeCache {
 
                 foreach (var valueIndex in pointerArray_) {
                     if (valueIndex.Key != EMPTY_MARKER) {
-                        value.Add(valueArray_[valueIndex.Key].Value);
+                        value.Add(valueArray_[valueIndex.Key].Value.Value);
                     }
                 }
 
@@ -498,7 +495,7 @@ namespace ParksComputing.SetAssociativeCache {
 
             foreach (KeyValuePair<int, int> keyArrayItem in pointerArray_) {
                 if (keyArrayItem.Key != EMPTY_MARKER) {
-                    array[arrayIndex] = new KeyValuePair<TKey, TValue>(valueArray_[keyArrayItem.Key].Key, valueArray_[keyArrayItem.Key].Value);
+                    array[arrayIndex] = new KeyValuePair<TKey, TValue>(valueArray_[keyArrayItem.Key].Value.Key, valueArray_[keyArrayItem.Key].Value.Value);
                     ++arrayIndex;
                 }
             }
@@ -520,9 +517,9 @@ namespace ParksComputing.SetAssociativeCache {
         /// </summary>
         [Serializable]
         private sealed class CacheEnumerator : IEnumerator<KeyValuePair<TKey, TValue>> {
-            CacheImplBase<TKey, TValue> cache_;
-            int version_;
-            int count_;
+            readonly CacheImplBase<TKey, TValue> cache_;
+            readonly int version_;
+            readonly int count_;
             int index_;
             KeyValuePair<TKey, TValue> current_;
 
@@ -551,7 +548,7 @@ namespace ParksComputing.SetAssociativeCache {
                 }
 
                 while (index_ < count_) {
-                    current_ = new KeyValuePair<TKey, TValue>(cache_.valueArray_[index_].Key, cache_.valueArray_[index_].Value);
+                    current_ = new KeyValuePair<TKey, TValue>(cache_.valueArray_[index_].Value.Key, cache_.valueArray_[index_].Value.Value);
                     ++index_;
                     return true;
                 }
@@ -617,7 +614,7 @@ namespace ParksComputing.SetAssociativeCache {
         /// <returns><c>true</c> if a key would be evicted; <c>false</c> otherwise.</returns>
         /// <exception cref="System.ArgumentNullException">key is null.</exception>
         public bool TryGetEvictKey(TKey key, out TKey evictKey) {
-            evictKey = default(TKey);
+            evictKey = default;
 
             if (key == null) {
                 throw new ArgumentNullException(nameof(key));
@@ -643,7 +640,7 @@ namespace ParksComputing.SetAssociativeCache {
                 }
 
                 /* If the key is found, no eviction. */
-                if (valueArray_[valueIndex].Key.Equals(key)) {
+                if (valueArray_[valueIndex].Value.Key.Equals(key)) {
                     return false;
                 }
             }
@@ -653,7 +650,7 @@ namespace ParksComputing.SetAssociativeCache {
             derived class. */
             int evictKeyIndex = setBegin + ReplacementOffset;
             valueIndex = pointerArray_[evictKeyIndex].Key;
-            evictKey = valueArray_[valueIndex].Key;
+            evictKey = valueArray_[valueIndex].Value.Key;
             return true;
         }
 
