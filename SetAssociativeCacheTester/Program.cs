@@ -1,8 +1,10 @@
 ﻿using System;
-using NUnit.Framework;
-using ParksComputing.SetAssociativeCache;
-using System.Linq;
 using System.Collections.Generic;
+using System.Linq;
+
+using NUnit.Framework;
+
+using ParksComputing.SetAssociativeCache;
 
 namespace SetAssociativeCacheSample {
     class Program {
@@ -79,7 +81,7 @@ namespace SetAssociativeCacheSample {
                         var setSize = int.Parse(cacheParams[1]);
 
                         string replacementAlgoName = cacheParams[2];
-                        
+
                         switch (replacementAlgoName) {
                         case "LRUReplacementAlgo":
                             cache = new LruCache<string, string>(setCount, setSize);

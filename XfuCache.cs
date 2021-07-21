@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 
 namespace ParksComputing.SetAssociativeCache {
     /// <summary>
@@ -93,7 +92,7 @@ namespace ParksComputing.SetAssociativeCache {
                 if (x.Value < y.Value) {
                     return 1;
                 }
-                
+
                 if (x.Value > y.Value) {
                     return -1;
                 }

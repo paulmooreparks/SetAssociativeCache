@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
-
-namespace ParksComputing.SetAssociativeCache {
+﻿namespace ParksComputing.SetAssociativeCache {
     /// <summary>
     /// Cache with least-frequently-used (LFU) eviction policy.
     /// </summary>

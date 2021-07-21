@@ -1,10 +1,9 @@
-using System.Linq;
 using System;
+using System.Collections.Generic;
 
 using NUnit.Framework;
 
 using ParksComputing.SetAssociativeCache;
-using System.Collections.Generic;
 
 namespace SetAssociativeCacheTests {
     /*
@@ -74,7 +73,7 @@ namespace SetAssociativeCacheTests {
                 cache.CopyTo(null, 0);
             });
             Assert.Throws<ArgumentOutOfRangeException>(() => {
-                KeyValuePair<string,int>[] dest = new KeyValuePair<string, int>[cache.Capacity];
+                KeyValuePair<string, int>[] dest = new KeyValuePair<string, int>[cache.Capacity];
                 cache.CopyTo(dest, -1);
             });
         }
@@ -292,7 +291,7 @@ namespace SetAssociativeCacheTests {
             Assert.IsFalse(cache.ContainsKey(88));
 
             Assert.IsTrue(cache.Remove(38));
-            Assert.IsTrue(cache.Remove(new KeyValuePair<int,int>(34,123)));
+            Assert.IsTrue(cache.Remove(new KeyValuePair<int, int>(34, 123)));
             Assert.IsFalse(cache.Remove(88));
             Assert.IsTrue(cache.Count == 0);
             Assert.IsTrue(cache.Capacity == 16);

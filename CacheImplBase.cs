@@ -17,11 +17,10 @@ namespace ParksComputing.SetAssociativeCache {
     /// </remarks>
     public abstract class CacheImplBase<TKey, TValue> : ISetAssociativeCache<TKey, TValue> {
 
-        /* I'm being a very naughty object-oriented developer. By using fields instead of 
-        properties, I've found that I can eliminate function calls from the release version 
-        of the JITted assembly code, at least on Intel/AMD x64. That actually surprises me. 
-        The properties still exist, though, in case external clients need to know the values 
-        for some reason. */
+        /* By using fields instead of properties, I've found that I can eliminate function 
+        alls from the release version of the JITted assembly code, at least on Intel/AMD x64. 
+        That actually surprises me. The properties still exist, though, in case external clients 
+        need to know the values for some reason. */
         protected int sets_; // Number of sets in the cache
         protected int ways_; // Capacity of each set in the cache
         protected int count_; // Number of items in the cache
@@ -522,7 +521,7 @@ namespace ParksComputing.SetAssociativeCache {
             int index_;
             KeyValuePair<TKey, TValue> current_;
 
-            public CacheEnumerator(CacheImplBase<TKey,TValue> cache) {
+            public CacheEnumerator(CacheImplBase<TKey, TValue> cache) {
                 this.cache_ = cache;
                 this.version_ = cache.version_;
                 this.count_ = cache.Count;
@@ -530,8 +529,8 @@ namespace ParksComputing.SetAssociativeCache {
             }
 
             public KeyValuePair<TKey, TValue> Current => current_;
-            
-            object IEnumerator.Current { 
+
+            object IEnumerator.Current {
                 get {
                     if (index_ == 0 || index_ == count_ + 1) {
                         throw new InvalidOperationException();
