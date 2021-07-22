@@ -18,8 +18,8 @@ namespace ParksComputing.SetAssociativeCache {
         /// </summary>
         /// <param name="key">The key of the element to get or set.</param>
         /// <returns>The element with the specified key.</returns>
-        /// <exception cref="System.ArgumentNullException">key is null.</exception>
-        /// <exception cref="System.Collections.Generic.KeyNotFoundException">The property is retrieved and key is not found.</exception>
+        /// <exception cref="System.ArgumentNullException"><paramref name="key"/> is null.</exception>
+        /// <exception cref="System.Collections.Generic.KeyNotFoundException">The property is retrieved and <paramref name="key"/> is not found.</exception>
         TValue this[TKey key] {
             get;
             set;
@@ -85,7 +85,7 @@ namespace ParksComputing.SetAssociativeCache {
         /// </summary>
         /// <param name="key">The object to use as the key of the element to add.</param>
         /// <param name="value">The object to use as the value of the element to add.</param>
-        /// <exception cref="System.ArgumentNullException">key is null.</exception>
+        /// <exception cref="System.ArgumentNullException"><paramref name="key"/> is null.</exception>
         void Add(TKey key, TValue value);
 
         /// <summary>
@@ -103,8 +103,8 @@ namespace ParksComputing.SetAssociativeCache {
         /// </summary>
         /// <param name="key">The key of the element to remove.</param>
         /// <returns>
-        /// true if the element is successfully removed; otherwise, false. This method also returns false if key 
-        /// was not found in the original ParksComputing.ISetAssociativeCache.
+        /// true if the element is successfully removed; otherwise, false. This method also returns false if 
+        /// <paramref name="key"/> was not found in the original ParksComputing.ISetAssociativeCache.
         /// </returns>
         bool Remove(TKey key);
 
@@ -121,7 +121,7 @@ namespace ParksComputing.SetAssociativeCache {
         /// true if the object that implements ParksComputing.ISetAssociativeCache contains 
         /// an element with the specified key; otherwise, false.
         /// </returns>
-        /// <exception cref="System.ArgumentNullException">key is null.</exception>
+        /// <exception cref="System.ArgumentNullException"><paramref name="key"/> is null.</exception>
         bool TryGetValue(TKey key, [MaybeNullWhen(false)] out TValue value);
     }
 }
