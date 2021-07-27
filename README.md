@@ -35,4 +35,4 @@ policies for when items are evicted from the cache, such as least-frequently use
         Console.WriteLine($"{couple.Key} loves {couple.Value}");
     }
 
-    /* Note that Brangelina and Kimye have been evicted from their respective sets. */
+    /* Note that Brangelina and Bennifer have been evicted from their respective sets. */
