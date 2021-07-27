@@ -13,7 +13,7 @@ policies for when items are evicted from the cache, such as least-frequently use
     change LruArrayCache to LfuArrayCache. We could also add new classes with other implementations. */
     
 
-    var coupleCache = new LruArrayCache<string, string>(2, 4);
+    var coupleCache = new LruArrayCache<string, string>(sets: 2, ways: 4);
 
     Console.WriteLine($"There is room for {coupleCache.Capacity} couples. Let the games begin....");
 
