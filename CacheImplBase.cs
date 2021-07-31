@@ -43,7 +43,7 @@ namespace ParksComputing.SetAssociativeCache {
         protected KeyValuePair<TKey, TValue>?[] valueArray_;
 
         /* This value is used as a sentinel to mark empty slots in the key array. */
-        protected const int EMPTY_MARKER = int.MaxValue;
+        protected const int EMPTY_MARKER = int.MinValue;
 
         /// <summary>
         /// Create a new <c>CacheImplBase</c> instance.

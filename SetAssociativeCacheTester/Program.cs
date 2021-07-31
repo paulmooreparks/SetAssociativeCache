@@ -9,36 +9,6 @@ using ParksComputing.SetAssociativeCache;
 namespace SetAssociativeCacheSample {
     class Program {
         static void Main(string[] args) {
-            /* Create a cache that maps string keys to string values, with 2 sets of 4 elements, or "ways". 
-            The policy class name is passed as the last type parameter. In this example, we use LruArrayCache, 
-            which removes the least-recently used item (LRU) when a new item is added to a full set. Slots 
-            are tracked in an array rather than a linked list, in order to keep it CPU-cache friendly. 
-            If we decide later that a least-frequently used cache (LFU) cache is more appropriate, we can 
-            change LruArrayCache to LfuArrayCache. We could also add new classes with other implementations. */
-            var coupleCache = new LruCache<string, string>(sets: 2, ways: 4);
-
-            Console.WriteLine($"There is room for {coupleCache.Capacity} couples. Let the games begin....");
-
-            coupleCache["Brad"] = "Angelina";
-            coupleCache["Ben"] = "Jennifer";
-            coupleCache["Kanye"] = "Kim";
-            coupleCache["Sonny"] = "Cher";
-            coupleCache["Desi"] = "Lucy";
-            coupleCache["Donald"] = "Ivana";
-            coupleCache["Burt"] = "Loni";
-            coupleCache["Johnny"] = "June";
-            coupleCache["John"] = "Yoko";
-            coupleCache["Kurt"] = "Goldie";
-
-            Console.WriteLine($"Out of 10 couples added, {coupleCache.Count} couples remain in the cache");
-            Console.WriteLine();
-
-            foreach (var couple in coupleCache) {
-                Console.WriteLine($"{couple.Key} loves {couple.Value}");
-            }
-        }
-
-        static void TestMain(string[] args) {
             string line;
             int lineCount = 0;
             bool dump = false;
@@ -130,6 +100,35 @@ namespace SetAssociativeCacheSample {
             }
         }
 
+        static void CodeSample(string[] args) {
+            /* Create a cache that maps string keys to string values, with 4 sets of 2 elements, or "ways". 
+            The policy class name is passed as the last type parameter. In this example, we use LruCache, 
+            which removes the least-recently used item (LRU) when a new item is added to a full set. Slots 
+            are tracked in an array rather than a linked list, in order to keep it CPU-cache friendly. 
+            If we decide later that a least-frequently used cache (LFU) cache is more appropriate, we can 
+            change LruCache to LfuCache. We could also add new classes with other implementations. */
+            LruCache<string, string> coupleCache = new(sets: 4, ways: 2);
+
+            Console.WriteLine($"There is room for {coupleCache.Capacity} couples. Let the games begin....");
+
+            coupleCache["Brad"] = "Angelina";
+            coupleCache["Ben"] = "Jennifer";
+            coupleCache["Kanye"] = "Kim";
+            coupleCache["Sonny"] = "Cher";
+            coupleCache["Desi"] = "Lucy";
+            coupleCache["Donald"] = "Ivana";
+            coupleCache["Burt"] = "Loni";
+            coupleCache["Johnny"] = "June";
+            coupleCache["John"] = "Yoko";
+            coupleCache["Kurt"] = "Goldie";
+
+            Console.WriteLine($"Out of 10 couples added, {coupleCache.Count} couples remain in the cache");
+            Console.WriteLine();
+
+            foreach (var couple in coupleCache) {
+                Console.WriteLine($"{couple.Key} loves {couple.Value}");
+            }
+        }
 
         public static object InvokeCacheMethod(string inputLine, ISetAssociativeCache<string, string> cacheInstance) {
             var callArgs = inputLine.Split(',').Select(a => a.Trim()).ToArray();
