@@ -546,9 +546,13 @@ namespace ParksComputing.SetAssociativeCache {
                 }
 
                 while (index_ < count_) {
-                    current_ = new KeyValuePair<TKey, TValue>(cache_.valueArray_[index_].Value.Key, cache_.valueArray_[index_].Value.Value);
+                    if (cache_.valueArray_[index_] != null) {
+                        current_ = new KeyValuePair<TKey, TValue>(cache_.valueArray_[index_].Value.Key, cache_.valueArray_[index_].Value.Value);
+                        ++index_;
+                        return true;
+                    }
+
                     ++index_;
-                    return true;
                 }
 
                 index_ = count_ + 1;
