@@ -107,26 +107,24 @@ namespace SetAssociativeCacheSample {
             are tracked in an array rather than a linked list, in order to keep it CPU-cache friendly. 
             If we decide later that a least-frequently used cache (LFU) cache is more appropriate, we can 
             change LruCache to LfuCache. We could also add new classes with other implementations. */
-            LruCache<string, string> coupleCache = new(sets: 4, ways: 3);
+            LruCache<string, string> coupleCache = new(sets: 3, ways: 3);
 
             Console.WriteLine($"There is room for {coupleCache.Capacity} couples. Let the games begin....");
 
             coupleCache["Brad"] = "Angelina";
-            coupleCache["Ben"] = "Jennifer";
             coupleCache["Kanye"] = "Kim";
+            coupleCache["Ben"] = "Jennifer";
+            coupleCache["Burt"] = "Loni";
+            coupleCache["Kurt"] = "Goldie";
             coupleCache["Sonny"] = "Cher";
             coupleCache["Desi"] = "Lucy";
-            coupleCache["Donald"] = "Ivana";
-            coupleCache["Burt"] = "Loni";
             coupleCache["Johnny"] = "June";
             coupleCache["John"] = "Yoko";
-            coupleCache["Kurt"] = "Goldie";
             coupleCache["Tom"] = "Rita";
-            coupleCache["David"] = "Victoria";
-            coupleCache["Will"] = "Jada";
-            coupleCache["Michael"] = "Catherine";
-            coupleCache["Kevin"] = "Kyra";
-            coupleCache["Keith"] = "Nicole";
+            //coupleCache["David"] = "Victoria";
+            //coupleCache["Will"] = "Jada";
+            //coupleCache["Kevin"] = "Kyra";
+            //coupleCache["Keith"] = "Nicole";
 
             Console.WriteLine($"Out of all couples added, {coupleCache.Count} couples remain in the cache");
             Console.WriteLine();
