@@ -197,6 +197,8 @@ namespace ParksComputing.SetAssociativeCache {
 
                 /* If the new key is equal to the key at the current position... */
                 if (valueArray_[valueIndex].Value.Key.Equals(key)) {
+                    /* Decrement the count for the item that we're replacing. */
+                    --count_;
                     /* We'll replace the value in the item array with this value. */
                     valueIndex = pointerArray_[pointerIndex].Key;
                     /* Delegate adding the cache item and managing the data for the cache policy 

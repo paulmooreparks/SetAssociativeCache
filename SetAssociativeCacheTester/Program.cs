@@ -124,8 +124,11 @@ namespace SetAssociativeCacheSample {
             coupleCache["Tom"] = "Rita";
             coupleCache["David"] = "Victoria";
             coupleCache["Will"] = "Jada";
+            coupleCache["Michael"] = "Catherine";
+            coupleCache["Kevin"] = "Kyra";
+            coupleCache["Keith"] = "Nicole";
 
-            Console.WriteLine($"Out of 10 couples added, {coupleCache.Count} couples remain in the cache");
+            Console.WriteLine($"Out of all couples added, {coupleCache.Count} couples remain in the cache");
             Console.WriteLine();
 
             foreach (var couple in coupleCache) {
