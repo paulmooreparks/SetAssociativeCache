@@ -172,6 +172,9 @@ namespace SetAssociativeCacheTests {
 
             Assert.IsTrue(cache.Count == 5);
 
+            cache["key09"] = "value09value09";
+            Assert.IsTrue(cache.Count == 5);
+
             string v;
             v = cache["key04"];
             Assert.IsTrue(v.Equals("value04"));
@@ -180,7 +183,7 @@ namespace SetAssociativeCacheTests {
             v = cache["key07"];
             Assert.IsTrue(v.Equals("value07"));
             v = cache["key09"];
-            Assert.IsTrue(v.Equals("value09"));
+            Assert.IsTrue(v.Equals("value09value09"));
 
             cache["key14"] = "value14";
             cache["key15"] = "value15";
@@ -214,6 +217,13 @@ namespace SetAssociativeCacheTests {
             cache["key02"] = "value02";
             cache["key03"] = "value03";
             cache["key04"] = "value04";
+
+            Assert.DoesNotThrow(() => {
+                foreach (var item in cache) {
+                    Console.WriteLine(item);
+                }
+            });
+
             cache["key05"] = "value05";
             cache["key06"] = "value06";
             cache["key07"] = "value07";
@@ -377,6 +387,9 @@ namespace SetAssociativeCacheTests {
 
             Assert.IsTrue(cache.Count == 4);
 
+            cache[2] = "value02value02";
+            Assert.IsTrue(cache.Count == 4);
+
             string v;
             v = cache[4];
             Assert.IsTrue(v.Equals("value04"));
@@ -399,7 +412,7 @@ namespace SetAssociativeCacheTests {
             v = cache[3];
             Assert.IsTrue(v.Equals("value03"));
             v = cache[2];
-            Assert.IsTrue(v.Equals("value02"));
+            Assert.IsTrue(v.Equals("value02value02"));
 
             cache[14] = "value14";
             cache[15] = "value15";
@@ -433,6 +446,13 @@ namespace SetAssociativeCacheTests {
             cache[2] = "value02";
             cache[3] = "value03";
             cache[4] = "value04";
+
+            Assert.DoesNotThrow(() => {
+                foreach (var item in cache) {
+                    Console.WriteLine(item);
+                }
+            });
+
             cache[5] = "value05";
             cache[6] = "value06";
             cache[7] = "value07";
@@ -544,6 +564,9 @@ namespace SetAssociativeCacheTests {
 
             Assert.IsTrue(cache.Count == 4);
 
+            cache["2"] = "value02value02";
+            Assert.IsTrue(cache.Count == 4);
+
             string v;
             v = cache["4"];
             Assert.IsTrue(v.Equals("value04"));
@@ -566,7 +589,7 @@ namespace SetAssociativeCacheTests {
             v = cache["3"];
             Assert.IsTrue(v.Equals("value03"));
             v = cache["2"];
-            Assert.IsTrue(v.Equals("value02"));
+            Assert.IsTrue(v.Equals("value02value02"));
 
             cache["14"] = "value14";
             cache["15"] = "value15";
@@ -600,6 +623,13 @@ namespace SetAssociativeCacheTests {
             cache["2"] = "value02";
             cache["3"] = "value03";
             cache["4"] = "value04";
+
+            Assert.DoesNotThrow(() => {
+                foreach (var item in cache) {
+                    Console.WriteLine(item);
+                }
+            });
+
             cache["5"] = "value05";
             cache["6"] = "value06";
             cache["7"] = "value07";
@@ -746,6 +776,9 @@ namespace SetAssociativeCacheTests {
 
             Assert.IsTrue(cache.Count == 5);
 
+            cache["key01"] = "value01value01";
+            Assert.IsTrue(cache.Count == 5);
+
             string v;
             v = cache["key04"];
             Assert.IsTrue(v.Equals("value04"));
@@ -754,7 +787,7 @@ namespace SetAssociativeCacheTests {
             v = cache["key02"];
             Assert.IsTrue(v.Equals("value02"));
             v = cache["key01"];
-            Assert.IsTrue(v.Equals("value01"));
+            Assert.IsTrue(v.Equals("value01value01"));
 
             cache["key14"] = "value14";
             cache["key15"] = "value15";
@@ -788,6 +821,13 @@ namespace SetAssociativeCacheTests {
             cache["key02"] = "value02";
             cache["key03"] = "value03";
             cache["key04"] = "value04";
+
+            Assert.DoesNotThrow(() => {
+                foreach (var item in cache) {
+                    Console.WriteLine(item);
+                }
+            });
+
             cache["key05"] = "value05";
             cache["key06"] = "value06";
             cache["key07"] = "value07";
