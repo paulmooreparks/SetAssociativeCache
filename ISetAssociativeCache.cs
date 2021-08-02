@@ -40,7 +40,7 @@ namespace ParksComputing.SetAssociativeCache {
         /// <param name="key">Key to test.</param>
         /// <param name="evictKey">Key of cache item that would be evicted, or default key value if return is false.</param>
         /// <returns><c>true</c> if a key would be evicted; <c>false</c> otherwise.</returns>
-        /// <exception cref="System.ArgumentNullException">key is null.</exception>
+        /// <exception cref="System.ArgumentNullException"><paramref name="key"/> is null.</exception>
         bool TryGetEvictKey(TKey key, out TKey evictKey);
     }
 }

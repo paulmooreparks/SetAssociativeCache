@@ -8,7 +8,7 @@ using ParksComputing.SetAssociativeCache;
 
 namespace SetAssociativeCacheSample {
     class Program {
-        static void TesterMain(string[] args) {
+        static void Main(string[] args) {
             string line;
             int lineCount = 0;
             bool dump = false;
@@ -100,7 +100,7 @@ namespace SetAssociativeCacheSample {
             }
         }
 
-        static void Main(string[] args) {
+        static void SampleMain(string[] args) {
             /* Create a cache that maps string keys to string values, with 4 sets of 2 elements, or "ways". 
             The policy class name is passed as the last type parameter. In this example, we use LruCache, 
             which removes the least-recently used item (LRU) when a new item is added to a full set. Slots 
@@ -112,6 +112,7 @@ namespace SetAssociativeCacheSample {
             Console.WriteLine($"There is room for {coupleCache.Capacity} couples. Let the games begin....");
 
             coupleCache["Brad"] = "Angelina";
+            coupleCache.Add(new("Brad", "Angelina"));
             coupleCache["Kanye"] = "Kim";
             coupleCache["Ben"] = "Jennifer";
             coupleCache["Burt"] = "Loni";
@@ -125,6 +126,11 @@ namespace SetAssociativeCacheSample {
             //coupleCache["Will"] = "Jada";
             //coupleCache["Kevin"] = "Kyra";
             //coupleCache["Keith"] = "Nicole";
+
+            Dictionary<string, string> map = new Dictionary<string, string>();
+            map.Add("Brad", "Angelina");
+            map["Brad"] = "Mildred";
+            map.Add("Brad", "Edna");
 
             Console.WriteLine($"Out of all couples added, {coupleCache.Count} couples remain in the cache");
             Console.WriteLine();

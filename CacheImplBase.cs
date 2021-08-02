@@ -73,7 +73,13 @@ namespace ParksComputing.SetAssociativeCache {
             }
 
             set {
-                Add(key, value);
+                AddOrUpdate(key, value, (key, value, set, pointerIndex, valueIndex) => {
+                    /* Decrement the count for the item that we're replacing. */
+                    --count_;
+                    /* Delegate adding the cache item and managing the data for the cache policy 
+                    to the Add method. */
+                    Add(key, value, set, pointerIndex, valueIndex);
+                });
             }
         }
 
@@ -143,12 +149,18 @@ namespace ParksComputing.SetAssociativeCache {
 
         /// <summary>
         /// Adds an element with the provided <paramref name="key"/> and <paramref name="value"/> 
-        /// to the ParksComputing.ISetAssociativeCache.
+        /// to the ParksComputing.ISetAssociativeCache if the <paramref name="key"/> is not found. 
+        /// If the <paramref name="key"/> is found, call the <paramref name="onKeyExists"/> 
+        /// delegate to handle the situation.
         /// </summary>
         /// <param name="key">The object to use as the key of the element to add.</param>
         /// <param name="value">The object to use as the value of the element to add.</param>
+        /// <param name="onKeyExists">The delegate to call when the <paramref name="key"/> 
+        /// is already present.</param>
+        /// <exception cref="System.ArgumentException">An element with the same <paramref name="key"/> 
+        /// already exists in the cache.</exception>
         /// <exception cref="System.ArgumentNullException"><paramref name="key"/> is null.</exception>
-        public virtual void Add(TKey key, TValue value) {
+        protected void AddOrUpdate(TKey key, TValue value, Action<TKey, TValue, int, int, int> onKeyExists) {
             if (key == null) {
                 throw new ArgumentNullException(nameof(key));
             }
@@ -197,13 +209,10 @@ namespace ParksComputing.SetAssociativeCache {
 
                 /* If the new key is equal to the key at the current position... */
                 if (valueArray_[valueIndex].Value.Key.Equals(key)) {
-                    /* Decrement the count for the item that we're replacing. */
-                    --count_;
-                    /* We'll replace the value in the item array with this value. */
                     valueIndex = pointerArray_[pointerIndex].Key;
                     /* Delegate adding the cache item and managing the data for the cache policy 
                     to the Add method. */
-                    Add(key, value, set, pointerIndex, valueIndex);
+                    onKeyExists(key, value, set, pointerIndex, valueIndex);
                     return;
                 }
             }
@@ -223,6 +232,21 @@ namespace ParksComputing.SetAssociativeCache {
             Add method. */
             Add(key, value, set, newKeyIndex, valueIndex);
             return;
+        }
+
+        /// <summary>
+        /// Adds an element with the provided <paramref name="key"/> and <paramref name="value"/> 
+        /// to the ParksComputing.ISetAssociativeCache.
+        /// </summary>
+        /// <param name="key">The object to use as the key of the element to add.</param>
+        /// <param name="value">The object to use as the value of the element to add.</param>
+        /// <exception cref="System.ArgumentException">An element with the same <paramref name="key"/> 
+        /// already exists in the cache.</exception>
+        /// <exception cref="System.ArgumentNullException"><paramref name="key"/> is null.</exception>
+        public virtual void Add(TKey key, TValue value) {
+            AddOrUpdate(key, value, (key, value, set, pointerIndex, valueIndex) => {
+                throw new ArgumentException($"Item with key already exists. Key: {key}", nameof(key));
+            });
         }
 
         /// <summary>

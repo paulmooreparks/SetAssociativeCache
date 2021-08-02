@@ -88,6 +88,9 @@ namespace SetAssociativeCacheTests {
             Assert.IsTrue(cache.ContainsKey(38));
             Assert.IsTrue(cache.ContainsKey(34));
             Assert.IsFalse(cache.ContainsKey(88));
+            Assert.Throws<ArgumentException>(() => {
+                cache.Add(38, 10);
+            });
         }
 
         [Test]
@@ -299,6 +302,10 @@ namespace SetAssociativeCacheTests {
             Assert.IsTrue(cache.ContainsKey(34));
             Assert.IsTrue(cache.Contains(new KeyValuePair<int, int>(38, 9)));
             Assert.IsFalse(cache.ContainsKey(88));
+
+            Assert.Throws<ArgumentException>(() => {
+                cache.Add(38, 10);
+            });
 
             Assert.IsTrue(cache.Remove(38));
             Assert.IsTrue(cache.Remove(new KeyValuePair<int, int>(34, 123)));
@@ -857,6 +864,10 @@ namespace SetAssociativeCacheTests {
             Assert.IsTrue(pairArray[5].Value == "value02");
             Assert.IsTrue(pairArray[6].Value == "value12");
             Assert.IsTrue(pairArray[7].Value == "value01");
+            
+            Assert.Throws<ArgumentException>(() => {
+                cache.Add("key08", "newValue");
+            });
         }
 
         [Test]
