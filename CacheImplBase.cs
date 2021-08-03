@@ -125,29 +125,6 @@ namespace ParksComputing.SetAssociativeCache {
         protected abstract int ReplacementOffset { get; }
 
         /// <summary>
-        /// Return an enumerable container of indices into the value array from a set in the key array.
-        /// </summary>
-        /// <param name="set">The set to operate on.</param>
-        /// <remarks>
-        /// Generalizing enumeration of sets this way is actually slower -- notably, but not excessively -- 
-        /// than copying the loop to all the places in the class that need to enumerate sets. I'll stay 
-        /// with this trade-off for now since it gives me some flexibility to modify the implementation 
-        /// later.
-        /// </remarks>
-        protected IEnumerable<int> GetSetPointerIndices(int set) {
-            /* Get the first array index for the set; in other words, where in the array does the set start? */
-            var setBegin = set * ways_;
-
-            int setOffset; // Offset into the set in the index array for where the key is stored
-            int pointerIndex; // Actual array location in the key array for setOffset
-
-            /* Loop over the set, incrementing both the set offset (setOffset) and the pointer-array index (pointerIndex) */
-            for (setOffset = 0, pointerIndex = setBegin; setOffset < ways_; ++setOffset, ++pointerIndex) {
-                yield return pointerIndex;
-            }
-        }
-
-        /// <summary>
         /// Adds an element with the provided <paramref name="key"/> and <paramref name="value"/> 
         /// to the ParksComputing.ISetAssociativeCache if the <paramref name="key"/> is not found. 
         /// If the <paramref name="key"/> is found, call the <paramref name="onKeyExists"/> 
@@ -167,7 +144,7 @@ namespace ParksComputing.SetAssociativeCache {
 
             /// <remarks>
             /// We don't use the WalkSet method here because that introduces just enough extra 
-            /// logic to make this code path about 33% slower, and that's too much of a slow-down 
+            /// logic to make this code path about 30% slower, and that's too much of a slow-down 
             /// even if it is still really fast in absolute terms.
             /// </remarks>
 
@@ -395,11 +372,6 @@ namespace ParksComputing.SetAssociativeCache {
         public virtual bool Remove(KeyValuePair<TKey, TValue> item) {
             var set = FindSet(item.Key);
 
-            /* Get the first array index for the set; in other words, where in the array does the 
-            set start? */
-            var setBegin = set * ways_;
-            var setEnd = setBegin + ways_;
-
             return WalkSet(set, (set, pointerIndex) => {
                 int valueIndex = pointerArray_[pointerIndex].Key;
 
@@ -421,6 +393,16 @@ namespace ParksComputing.SetAssociativeCache {
             });
         }
 
+        /// <summary>
+        /// Walks over each element of a set in the key array and calls a delegate for each 
+        /// element, passing the set and the key-array index corresponding to the current 
+        /// element to the delegate. If the delegate returns <c>true</c>, the iteration stops.
+        /// </summary>
+        /// <param name="set">The set to iterate over.</param>
+        /// <param name="func">The delegate to call for each element.</param>
+        /// <returns>
+        /// <c>true</c> if the delegate returns <c>true</c> at any time; <c>false</c> otherwise.
+        /// </returns>
         protected bool WalkSet(int set, Func<int, int, bool> func) {
             /* Get the first array index for the set; in other words, where in the array does the 
             set start? */
@@ -437,6 +419,27 @@ namespace ParksComputing.SetAssociativeCache {
             return false;
         }
 
+        /// <summary>
+        /// Return an enumerable container of indices into the value array from a set in the key array.
+        /// </summary>
+        /// <param name="set">The set to operate on.</param>
+        /// <remarks>
+        /// Compare this to the <c>WalkSet</c> method. Generalizing enumeration of sets this way is 
+        /// noticeably slower than <c>WalkSet</c>, probably because of all the code that is 
+        /// generated behind the scenes. I left it here in case it still may serve some purpose,
+        /// </remarks>
+        protected IEnumerable<int> GetSetPointerIndices(int set) {
+            /* Get the first array index for the set; in other words, where in the array does the set start? */
+            var setBegin = set * ways_;
+
+            int setOffset; // Offset into the set in the index array for where the key is stored
+            int pointerIndex; // Actual array location in the key array for setOffset
+
+            /* Loop over the set, incrementing both the set offset (setOffset) and the pointer-array index (pointerIndex) */
+            for (setOffset = 0, pointerIndex = setBegin; setOffset < ways_; ++setOffset, ++pointerIndex) {
+                yield return pointerIndex;
+            }
+        }
 
         /// <summary>
         /// Gets an System.Collections.Generic.ICollection containing the keys of the ParksComputing.ISetAssociativeCache.
