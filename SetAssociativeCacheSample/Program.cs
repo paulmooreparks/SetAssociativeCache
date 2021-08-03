@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Immutable;
 using System.Collections.Generic;
 
 using ParksComputing.SetAssociativeCache;
@@ -12,7 +13,7 @@ namespace SetAssociativeCacheSample {
             are tracked in an array rather than a linked list, in order to keep it CPU-cache friendly. 
             If we decide later that a least-frequently used cache (LFU) cache is more appropriate, we can 
             change LruCache to LfuCache. We could also add new classes with other implementations. */
-            LruCache<string, string> coupleCache = new LruCache<string,string>(sets: 3, ways: 3);
+            var coupleCache = new LruCache<string,string>(sets: 3, ways: 3);
 
             Console.WriteLine($"There is room for {coupleCache.Capacity} couples. Let the games begin....");
 
@@ -34,6 +35,7 @@ namespace SetAssociativeCacheSample {
 
             var bradPartner = coupleCache.GetValueOrDefault("Brad");
             bool tryAddResult = coupleCache.TryAdd("Kanye", "Edna");
+            var immDict = coupleCache.ToImmutableDictionary();
 
             IDictionary<string, string> dict = coupleCache;
 

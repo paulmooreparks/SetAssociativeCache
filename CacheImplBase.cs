@@ -336,6 +336,8 @@ namespace ParksComputing.SetAssociativeCache {
             return result;
         }
 
+        bool IReadOnlyDictionary<TKey, TValue>.TryGetValue(TKey key, out TValue value) => TryGetValue(key, out value);
+
         /// <summary>
         /// Removes the element with the specified key from the ParksComputing.ISetAssociativeCache.
         /// </summary>
@@ -476,6 +478,8 @@ namespace ParksComputing.SetAssociativeCache {
             }
         }
 
+        IEnumerable<TKey> IReadOnlyDictionary<TKey, TValue>.Keys => Keys;
+
         /// <summary>
         /// Gets an System.Collections.Generic.ICollection containing the values in the ParksComputing.ISetAssociativeCache.
         /// </summary>
@@ -495,6 +499,8 @@ namespace ParksComputing.SetAssociativeCache {
                 return value;
             }
         }
+
+        IEnumerable<TValue> IReadOnlyDictionary<TKey, TValue>.Values => Values;
 
         /// <summary>
         /// Copies the elements of the System.Collections.Generic.ICollection to an 
@@ -619,8 +625,6 @@ namespace ParksComputing.SetAssociativeCache {
         /// <c>true</c> if the System.Collections.Generic.ICollection is read-only; otherwise, <c>false</c>.
         /// </value>
         public bool IsReadOnly { get => false; }
-        IEnumerable<TKey> IReadOnlyDictionary<TKey, TValue>.Keys => Keys;
-        IEnumerable<TValue> IReadOnlyDictionary<TKey, TValue>.Values => Values;
 
         /// <summary>
         /// Removes all items from the System.Collections.Generic.ICollection.
