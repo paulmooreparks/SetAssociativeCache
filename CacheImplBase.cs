@@ -166,12 +166,9 @@ namespace ParksComputing.SetAssociativeCache {
             }
 
             /// <remarks>
-            /// The following iteration pattern repeats in most of the methods in this class, so 
-            /// it bears explaining. The call to <c>FindSet</c> gets the set in which the <c>key</c>  
-            /// would be found. The call to <c>GetSetPointerIndices</c> retrieves an enumerable 
-            /// collection of indices into the pointer array. The <c>foreach</c> loop iterates over 
-            /// the enumeration to allow searching for keys in the set, looking for empty slots in 
-            /// the set, and any other set-level operations.
+            /// We don't use the WalkSet method here because that introduces just enough extra 
+            /// logic to make this code path about 33% slower, and that's too much of a slow-down 
+            /// even if it is still really fast in absolute terms.
             /// </remarks>
 
             /* Get the number of the set that would contain the new key. */
@@ -272,14 +269,7 @@ namespace ParksComputing.SetAssociativeCache {
 
             var set = FindSet(key);
 
-            /* Get the first array index for the set; in other words, where in the array does the 
-            set start? */
-            var setBegin = set * ways_;
-            var setEnd = setBegin + ways_;
-            int pointerIndex; // Actual array location in the key array
-
-            /* Loop over the set */
-            for (pointerIndex = setBegin; pointerIndex < setEnd; ++pointerIndex) {
+            return WalkSet(set, (set, pointerIndex) => {
                 int valueIndex = pointerArray_[pointerIndex].Key;
 
                 /* If the key is found in the value array... */
@@ -289,9 +279,9 @@ namespace ParksComputing.SetAssociativeCache {
                     PromoteKey(set, pointerIndex);
                     return true;
                 }
-            }
 
-            return false;
+                return false;
+            });
         }
 
         /// <summary>
@@ -302,14 +292,7 @@ namespace ParksComputing.SetAssociativeCache {
         public virtual bool Contains(KeyValuePair<TKey, TValue> item) {
             var set = FindSet(item.Key);
 
-            /* Get the first array index for the set; in other words, where in the array does the 
-            set start? */
-            var setBegin = set * ways_;
-            var setEnd = setBegin + ways_;
-            int pointerIndex; // Actual array location in the key array
-
-            /* Loop over the set */
-            for (pointerIndex = setBegin; pointerIndex < setEnd; ++pointerIndex) {
+            return WalkSet(set, (set, pointerIndex) => {
                 int valueIndex = pointerArray_[pointerIndex].Key;
 
                 /* If the key is found in the value array, and the value at that key matches the provided value... */
@@ -320,9 +303,9 @@ namespace ParksComputing.SetAssociativeCache {
                     PromoteKey(set, pointerIndex);
                     return true;
                 }
-            }
 
-            return false;
+                return false;
+            });
         }
 
         /// <summary>
@@ -345,15 +328,9 @@ namespace ParksComputing.SetAssociativeCache {
             }
 
             var set = FindSet(key);
+            TValue newValue = default;
 
-            /* Get the first array index for the set; in other words, where in the array does the 
-            set start? */
-            var setBegin = set * ways_;
-            var setEnd = setBegin + ways_;
-            int pointerIndex; // Actual array location in the key array
-
-            /* Loop over the set */
-            for (pointerIndex = setBegin; pointerIndex < setEnd; ++pointerIndex) {
+            bool result = WalkSet(set, (set, pointerIndex) => {
                 int valueIndex = pointerArray_[pointerIndex].Key;
 
                 /* If the key is found in the value array... */
@@ -361,13 +338,15 @@ namespace ParksComputing.SetAssociativeCache {
                     /* "Touch" the key to note that it has been accessed. */
                     PromoteKey(set, pointerIndex);
                     /* Return the value found at this location in the value array. */
-                    value = valueArray_[valueIndex].Value.Value;
+                    newValue = valueArray_[valueIndex].Value.Value;
                     return true;
                 }
-            }
 
-            value = default;
-            return false;
+                return false;
+            });
+
+            value = newValue;
+            return result;
         }
 
         /// <summary>
@@ -385,14 +364,7 @@ namespace ParksComputing.SetAssociativeCache {
 
             var set = FindSet(key);
 
-            /* Get the first array index for the set; in other words, where in the array does the 
-            set start? */
-            var setBegin = set * ways_;
-            var setEnd = setBegin + ways_;
-            int pointerIndex; // Actual array location in the key array
-
-            /* Loop over the set */
-            for (pointerIndex = setBegin; pointerIndex < setEnd; ++pointerIndex) {
+            return WalkSet(set, (set, pointerIndex) => {
                 int valueIndex = pointerArray_[pointerIndex].Key;
 
                 if (valueIndex != EMPTY_MARKER && valueArray_[valueIndex].Value.Key.Equals(key)) {
@@ -407,9 +379,9 @@ namespace ParksComputing.SetAssociativeCache {
                     --count_;
                     return true;
                 }
-            }
 
-            return false;
+                return false;
+            });
         }
 
         /// <summary>
@@ -427,10 +399,8 @@ namespace ParksComputing.SetAssociativeCache {
             set start? */
             var setBegin = set * ways_;
             var setEnd = setBegin + ways_;
-            int pointerIndex; // Actual array location in the key array
 
-            /* Loop over the set */
-            for (pointerIndex = setBegin; pointerIndex < setEnd; ++pointerIndex) {
+            return WalkSet(set, (set, pointerIndex) => {
                 int valueIndex = pointerArray_[pointerIndex].Key;
 
                 if (valueIndex != EMPTY_MARKER &&
@@ -446,10 +416,27 @@ namespace ParksComputing.SetAssociativeCache {
                     --count_;
                     return true;
                 }
+
+                return false;
+            });
+        }
+
+        protected bool WalkSet(int set, Func<int, int, bool> func) {
+            /* Get the first array index for the set; in other words, where in the array does the 
+            set start? */
+            var setBegin = set * ways_;
+            var setEnd = setBegin + ways_;
+
+            /* Loop over the set */
+            for (int pointerIndex = setBegin; pointerIndex < setEnd; ++pointerIndex) {
+                if (func(set, pointerIndex)) {
+                    return true;
+                }
             }
 
             return false;
         }
+
 
         /// <summary>
         /// Gets an System.Collections.Generic.ICollection containing the keys of the ParksComputing.ISetAssociativeCache.
@@ -649,34 +636,35 @@ namespace ParksComputing.SetAssociativeCache {
 
             /* Get the number of the set that would contain the new key. */
             var set = FindSet(key);
-
-            /* Get the first array index for the set; in other words, where in the array does the set start? */
             var setBegin = set * ways_;
-            var setEnd = setBegin + ways_;
-            int pointerIndex; // Actual array location in the key array
 
-            /* Loop over the set */
-            for (pointerIndex = setBegin; pointerIndex < setEnd; ++pointerIndex) {
+            bool result = WalkSet(set, (set, pointerIndex) => {
                 valueIndex = pointerArray_[pointerIndex].Key;
 
                 /* If the slot is empty, no eviction. */
                 if (valueIndex == EMPTY_MARKER) {
-                    return false;
+                    return true;
                 }
 
                 /* If the key is found, no eviction. */
                 if (valueArray_[valueIndex].Value.Key.Equals(key)) {
-                    return false;
+                    return true;
                 }
+
+                return false;
+            });
+
+            if (!result) {
+                /* If we get here, the set is full and adding the key would cause an eviction. Report 
+                the key that would be evicted by this replacement, according to the policy of the 
+                derived class. */
+                int evictKeyIndex = setBegin + ReplacementOffset;
+                valueIndex = pointerArray_[evictKeyIndex].Key;
+                evictKey = valueArray_[valueIndex].Value.Key;
+                return true;
             }
 
-            /* If we get here, the set is full and adding the key would cause an eviction. Report 
-            the key that would be evicted by this replacement, according to the policy of the 
-            derived class. */
-            int evictKeyIndex = setBegin + ReplacementOffset;
-            valueIndex = pointerArray_[evictKeyIndex].Key;
-            evictKey = valueArray_[valueIndex].Value.Key;
-            return true;
+            return false;
         }
 
         /// <summary>
