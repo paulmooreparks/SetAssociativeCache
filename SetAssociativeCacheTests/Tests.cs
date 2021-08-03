@@ -256,6 +256,16 @@ namespace SetAssociativeCacheTests {
             Assert.IsTrue(pairArray[5].Value == "value06");
             Assert.IsTrue(pairArray[6].Value == "value12");
             Assert.IsTrue(pairArray[7].Value == "value09");
+
+            Assert.Throws<ArgumentException>(() => {
+                cache.Add(new KeyValuePair<string, string>(null, null));
+            });
+            Assert.Throws<ArgumentException>(() => {
+                cache.Contains(new KeyValuePair<string, string>(null, null));
+            });
+            Assert.Throws<ArgumentException>(() => {
+                cache.Remove(new KeyValuePair<string, string>(null, null));
+            });
         }
 
         [Test]
@@ -666,6 +676,16 @@ namespace SetAssociativeCacheTests {
             Assert.IsTrue(pairArray[5].Value == "value03");
             Assert.IsTrue(pairArray[6].Value == "value11");
             Assert.IsTrue(pairArray[7].Value == "value04");
+
+            Assert.Throws<ArgumentException>(() => {
+                cache.Add(new KeyValuePair<string, string>(null, null));
+            });
+            Assert.Throws<ArgumentException>(() => {
+                cache.Contains(new KeyValuePair<string, string>(null, null));
+            });
+            Assert.Throws<ArgumentException>(() => {
+                cache.Remove(new KeyValuePair<string, string>(null, null));
+            });
         }
 
         [Test]
@@ -867,6 +887,16 @@ namespace SetAssociativeCacheTests {
             
             Assert.Throws<ArgumentException>(() => {
                 cache.Add("key08", "newValue");
+            });
+
+            Assert.Throws<ArgumentException>(() => {
+                cache.Add(new KeyValuePair<string, string>(null, null));
+            });
+            Assert.Throws<ArgumentException>(() => {
+                cache.Contains(new KeyValuePair<string, string>(null, null));
+            });
+            Assert.Throws<ArgumentException>(() => {
+                cache.Remove(new KeyValuePair<string, string>(null, null));
             });
         }
 

@@ -15,7 +15,7 @@ namespace ParksComputing.SetAssociativeCache {
     /// keys. I tried abstracting this away with a few different attempts, and each was a 
     /// little bit cleaner, maybe, albeit harder to follow, but a lot slower.
     /// </remarks>
-    public abstract class CacheImplBase<TKey, TValue> : ISetAssociativeCache<TKey, TValue> {
+    public abstract class CacheImplBase<TKey, TValue> : ISetAssociativeCache<TKey, TValue>, IReadOnlyDictionary<TKey, TValue> {
 
         /* By using fields instead of properties, I've found that I can eliminate function 
         alls from the release version of the JITted assembly code, at least on Intel/AMD x64. 
@@ -227,7 +227,12 @@ namespace ParksComputing.SetAssociativeCache {
         /// Adds an item to the cache.
         /// </summary>
         /// <param name="item">The key/value pair to add to the cache.</param>
+        /// <exception cref="System.ArgumentException">Key field in <paramref name="item"/> is null.</exception>
         public void Add(KeyValuePair<TKey, TValue> item) {
+            if (item.Key == null) {
+                throw new ArgumentException($"Key field in item is null", nameof(item));
+            }
+
             Add(item.Key, item.Value);
         }
 
@@ -266,7 +271,12 @@ namespace ParksComputing.SetAssociativeCache {
         /// </summary>
         /// <param name="item">The object to locate in the System.Collections.Generic.ICollection.</param>
         /// <returns>true if item is found in the System.Collections.Generic.ICollection; otherwise, false.</returns>
+        /// <exception cref="System.ArgumentException">Key field in <paramref name="item"/> is null.</exception>
         public virtual bool Contains(KeyValuePair<TKey, TValue> item) {
+            if (item.Key == null) {
+                throw new ArgumentException($"Key field in item is null", nameof(item));
+            }
+
             var set = FindSet(item.Key);
 
             return WalkSet(set, (set, pointerIndex) => {
@@ -369,7 +379,12 @@ namespace ParksComputing.SetAssociativeCache {
         /// true if the element is successfully removed; otherwise, false. This method also returns false if key 
         /// was not found in the original ParksComputing.ISetAssociativeCache.
         /// </returns>
+        /// <exception cref="System.ArgumentException">Key field in <paramref name="item"/> is null.</exception>
         public virtual bool Remove(KeyValuePair<TKey, TValue> item) {
+            if (item.Key == null) {
+                throw new ArgumentException($"Key field in item is null", nameof(item));
+            }
+
             var set = FindSet(item.Key);
 
             return WalkSet(set, (set, pointerIndex) => {
@@ -604,6 +619,8 @@ namespace ParksComputing.SetAssociativeCache {
         /// <c>true</c> if the System.Collections.Generic.ICollection is read-only; otherwise, <c>false</c>.
         /// </value>
         public bool IsReadOnly { get => false; }
+        IEnumerable<TKey> IReadOnlyDictionary<TKey, TValue>.Keys => Keys;
+        IEnumerable<TValue> IReadOnlyDictionary<TKey, TValue>.Values => Values;
 
         /// <summary>
         /// Removes all items from the System.Collections.Generic.ICollection.
