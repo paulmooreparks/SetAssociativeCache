@@ -100,40 +100,6 @@ namespace SetAssociativeCacheSample {
             }
         }
 
-        static void SampleMain(string[] args) {
-            /* Create a cache that maps string keys to string values, with 4 sets of 2 elements, or "ways". 
-            The policy class name is passed as the last type parameter. In this example, we use LruCache, 
-            which removes the least-recently used item (LRU) when a new item is added to a full set. Slots 
-            are tracked in an array rather than a linked list, in order to keep it CPU-cache friendly. 
-            If we decide later that a least-frequently used cache (LFU) cache is more appropriate, we can 
-            change LruCache to LfuCache. We could also add new classes with other implementations. */
-            LruCache<string, string> coupleCache = new(sets: 3, ways: 3);
-
-            Console.WriteLine($"There is room for {coupleCache.Capacity} couples. Let the games begin....");
-
-            coupleCache["Brad"] = "Angelina";
-            coupleCache["Kanye"] = "Kim";
-            coupleCache["Ben"] = "Jennifer";
-            coupleCache["Burt"] = "Loni";
-            coupleCache["Kurt"] = "Goldie";
-            coupleCache["Sonny"] = "Cher";
-            coupleCache["Desi"] = "Lucy";
-            coupleCache["Johnny"] = "June";
-            coupleCache["John"] = "Yoko";
-            coupleCache["Tom"] = "Rita";
-            //coupleCache["David"] = "Victoria";
-            //coupleCache["Will"] = "Jada";
-            //coupleCache["Kevin"] = "Kyra";
-            //coupleCache["Keith"] = "Nicole";
-
-            Console.WriteLine($"Out of all couples added, {coupleCache.Count} couples remain in the cache");
-            Console.WriteLine();
-
-            foreach (var couple in coupleCache) {
-                Console.WriteLine($"{couple.Key} loves {couple.Value}");
-            }
-        }
-
         public static object InvokeCacheMethod(string inputLine, ISetAssociativeCache<string, string> cacheInstance) {
             var callArgs = inputLine.Split(',').Select(a => a.Trim()).ToArray();
 
