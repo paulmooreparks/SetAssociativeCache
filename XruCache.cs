@@ -16,7 +16,7 @@ namespace ParksComputing.SetAssociativeCache {
     /// </remarks>
     public abstract class XruCache<TKey, TValue> : CacheImplBase<TKey, TValue> {
         /// <summary>
-        /// Create a new <c>XfuArrayCache</c> instance.
+        /// Create a new <c>XfuCache</c> instance.
         /// </summary>
         /// <param name="sets">The number of sets into which the cache is divided.</param>
         /// <param name="ways">The number of storage slots in each set.</param>
