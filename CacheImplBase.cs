@@ -626,6 +626,8 @@ namespace ParksComputing.SetAssociativeCache {
                 }
 
                 this.index_ = 0;
+                this.set_ = 0;
+                this.way_ = 0;
                 this.current_ = new KeyValuePair<TKey, TValue>();
             }
 
