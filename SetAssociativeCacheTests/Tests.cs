@@ -1,8 +1,6 @@
 using System;
 using System.Collections.Generic;
-
 using NUnit.Framework;
-
 using ParksComputing.SetAssociativeCache;
 
 namespace SetAssociativeCacheTests {

@@ -28,41 +28,53 @@ namespace ParksComputing.SetAssociativeCache {
         /// necessary according to the details of the cache policy.
         /// </summary>
         /// <param name="set">Which set to update.</param>
-        /// <param name="pointerIndex">The offset into the set to update.</param>
-        override protected void UpdateSet(int set, int pointerIndex) {
-            PromoteKey(set, pointerIndex);
+        /// <param name="way">The offset into the set to update.</param>
+        override protected void UpdateSet(int set, int way) {
+            PromoteKey(set, way);
         }
 
         /// <summary>
         /// Move the key in the given set at the given offset to the front of the set. 
         /// </summary>
         /// <param name="set">The set in which the key is stored.</param>
-        /// <param name="pointerIndex">The index into the key array.</param>
-        protected override void PromoteKey(int set, int pointerIndex) {
-            int headIndex = set * ways_;
-            int count = pointerIndex - headIndex;
-            int newHeadItemKey = pointerArray_[pointerIndex].Key;
-            int newHeadItemValue = pointerArray_[pointerIndex].Value;
-            /* Move the key to the lowest index in the set. */
-            System.Array.Copy(pointerArray_, headIndex, pointerArray_, headIndex + 1, count);
-            pointerArray_[headIndex] = new KeyValuePair<int, int>(newHeadItemKey, newHeadItemValue);
+        /// <param name="way">The index into the key array.</param>
+        protected override void PromoteKey(int set, int way) {
+            int count = way;
+            int newHeadItemKey = pointerArray_[set][way].Key;
+            int newHeadItemValue = pointerArray_[set][way].Value;
+
+            if (count > 0) {
+                /* Move the key to the lowest index in the set. */
+                System.Array.Copy(pointerArray_[set], 0, pointerArray_[set], 1, count);
+                pointerArray_[set][0] = new KeyValuePair<int, int>(newHeadItemKey, newHeadItemValue);
+            }
         }
 
         /// <summary>
         /// Move the key in the given set at the given offset to the end of the set. 
         /// </summary>
         /// <param name="set">The set in which the key is stored.</param>
-        /// <param name="pointerIndex">The index into the key array.</param>
-        protected override void DemoteKey(int set, int pointerIndex) {
-            int headIndex = set * ways_;
-            int setOffset = pointerIndex % ways_;
-            int tailIndex = headIndex + ways_ - 1;
-            int count = ways_ - setOffset - 1;
-            int newTailItemKey = pointerArray_[pointerIndex].Key;
-            int newTailItemValue = pointerArray_[pointerIndex].Value;
-            /* Move the key to the highest index in the set. */
-            System.Array.Copy(pointerArray_, pointerIndex + 1, pointerArray_, pointerIndex, count);
-            pointerArray_[tailIndex] = new KeyValuePair<int, int>(newTailItemKey, newTailItemValue);
+        /// <param name="way">The index into the key array.</param>
+        protected override void DemoteKey(int set, int way) {
+            int tailIndex = ways_ - 1;
+            int count = ways_ - way - 1;
+            int newTailItemKey = pointerArray_[set][way].Key;
+            int newTailItemValue = pointerArray_[set][way].Value;
+
+            if (count > 0 && way < tailIndex) {
+                /* Move the key to the highest index in the set. */
+                System.Array.Copy(pointerArray_[set], way + 1, pointerArray_[set], way, count);
+                pointerArray_[set][tailIndex] = new KeyValuePair<int, int>(newTailItemKey, newTailItemValue);
+            }
+            
+            //int setOffset = way;
+            //int tailIndex = ways_ - 1;
+            //int count = ways_ - 1;
+            //int newTailItemKey = pointerArray_[set][way].Key;
+            //int newTailItemValue = pointerArray_[set][way].Value;
+            // /* Move the key to the highest index in the set. */
+            //System.Array.Copy(pointerArray_[set], way + 1, pointerArray_[set], way, count);
+            //pointerArray_[set][tailIndex] = new KeyValuePair<int, int>(newTailItemKey, newTailItemValue);
         }
     }
 }

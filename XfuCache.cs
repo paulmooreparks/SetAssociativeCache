@@ -31,26 +31,25 @@ namespace ParksComputing.SetAssociativeCache {
         /// necessary according to the details of the cache policy.
         /// </summary>
         /// <param name="set">Which set to update.</param>
-        /// <param name="pointerIndex">The index into the key array.</param>
-        override protected void UpdateSet(int set, int pointerIndex) {
+        /// <param name="way">The index into the key array.</param>
+        override protected void UpdateSet(int set, int way) {
             //int headIndex = set * ways_;
             //int len = ways_ - 1;
             //int tailIndex = headIndex + ways_ - 1;
             //var newTailItem = new KeyValuePair<int, int>(pointerArray_[pointerIndex].Key, 1);
             //System.Array.Copy(pointerArray_, headIndex + 1, pointerArray_, headIndex, len);
             //pointerArray_[tailIndex] = newTailItem;
-            PromoteKey(set, pointerIndex);
+            PromoteKey(set, way);
         }
 
         /// <summary>
         /// Increment the count for the last cache item accessed, then sort the set based on all counts.
         /// </summary>
         /// <param name="set">The set in which the key is stored.</param>
-        /// <param name="pointerIndex">The index into the key array.</param>
-        protected override void PromoteKey(int set, int pointerIndex) {
-            int headIndex = set * ways_;
-            int newHeadItemKey = pointerArray_[pointerIndex].Key;
-            int newHeadItemValue = pointerArray_[pointerIndex].Value;
+        /// <param name="way">The index into the key array.</param>
+        protected override void PromoteKey(int set, int way) {
+            int newHeadItemKey = pointerArray_[set][way].Key;
+            int newHeadItemValue = pointerArray_[set][way].Value;
 
             /* Increment the frequency count, checking for overflow. */
             try {
@@ -62,21 +61,20 @@ namespace ParksComputing.SetAssociativeCache {
                 newHeadItemValue = 1;
             }
 
-            pointerArray_[pointerIndex] = new KeyValuePair<int, int>(newHeadItemKey, newHeadItemValue);
-            Array.Sort(pointerArray_, headIndex, ways_, lfuComparer_);
+            pointerArray_[set][way] = new KeyValuePair<int, int>(newHeadItemKey, newHeadItemValue);
+            Array.Sort(pointerArray_[set], 0, ways_, lfuComparer_);
         }
 
         /// <summary>
         /// Set an item's count to zero (removal from cache, for example), then sort the set based on all counts.
         /// </summary>
         /// <param name="set">The set in which the key is stored.</param>
-        /// <param name="pointerIndex">The index into the key array.</param>
-        protected override void DemoteKey(int set, int pointerIndex) {
-            int headIndex = set * ways_;
-            int newTailItemKey = pointerArray_[pointerIndex].Key;
+        /// <param name="way">The index into the key array.</param>
+        protected override void DemoteKey(int set, int way) {
+            int newTailItemKey = pointerArray_[set][way].Key;
             int newTailItemValue = 0;
-            pointerArray_[pointerIndex] = new KeyValuePair<int, int>(newTailItemKey, newTailItemValue);
-            Array.Sort(pointerArray_, headIndex, ways_, lfuComparer_);
+            pointerArray_[set][way] = new KeyValuePair<int, int>(newTailItemKey, newTailItemValue);
+            Array.Sort(pointerArray_[set], 0, ways_, lfuComparer_);
         }
 
         /* Comparer object used to sort items in indexArray in LFU order. */
