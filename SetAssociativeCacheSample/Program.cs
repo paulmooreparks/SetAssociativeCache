@@ -37,6 +37,13 @@ namespace SetAssociativeCacheSample {
             //coupleCache["Kevin"] = "Kyra";
             //coupleCache["Keith"] = "Nicole";
 
+            Console.WriteLine($"Out of all couples added, {coupleCache.Count} couples remain in the cache");
+            Console.WriteLine();
+
+            foreach (var couple in coupleCache) {
+                Console.WriteLine($"{couple.Key} loves {couple.Value}");
+            }
+
             var bradPartner = coupleCache.GetValueOrDefault("Brad");
             bool tryAddResult = coupleCache.TryAdd("Kanye", "Edna");
             // var immDict = coupleCache.ToImmutableDictionary();
@@ -44,13 +51,6 @@ namespace SetAssociativeCacheSample {
             IDictionary<string, string> dict = coupleCache;
 
             dict.Remove("Kanye", out string kanyePartner);
-
-            Console.WriteLine($"Out of all couples added, {coupleCache.Count} couples remain in the cache");
-            Console.WriteLine();
-
-            foreach (var couple in coupleCache) {
-                Console.WriteLine($"{couple.Key} loves {couple.Value}");
-            }
         }
 
         static void LruHamAndEggs() {

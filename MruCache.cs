@@ -1,6 +1,6 @@
 ﻿namespace ParksComputing.SetAssociativeCache {
     /// <summary>
-    /// Cache with least-recently-used (LRU) eviction policy.
+    /// Cache with most-recently-used (MRU) eviction policy.
     /// </summary>
     /// <typeparam name="TKey"></typeparam>
     /// <typeparam name="TValue"></typeparam>
@@ -14,8 +14,8 @@
         }
 
         /// <summary>
-        /// The offset into the set for the item which should be evicted from the cache.
+        /// Gets the offset into the pointer set for the item which should be evicted from the cache.
         /// </summary>
-        protected override int ReplacementOffset => 0; // MRU is at the lowest index in the set
+        protected override int EvictionPointerIndex => 0; // MRU is at the lowest index in the set
     }
 }

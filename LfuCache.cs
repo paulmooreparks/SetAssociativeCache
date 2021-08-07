@@ -11,12 +11,11 @@
         /// <param name="sets">The number of sets into which the cache is divided.</param>
         /// <param name="ways">The number of storage slots in each set.</param>
         public LfuCache(int sets, int ways) : base(sets, ways) {
-            Clear();
         }
 
         /// <summary>
-        /// The offset into the set for the item which should be evicted from the cache.
+        /// Gets the offset into the pointer set for the item which should be evicted from the cache.
         /// </summary>
-        protected override int ReplacementOffset => ways_ - 1; // LFU is at the highest index in the set
+        protected override int EvictionPointerIndex => ways_ - 1; // LFU is at the highest index in the set
     }
 }
