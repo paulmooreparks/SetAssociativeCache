@@ -57,7 +57,7 @@ namespace ParksComputing.SetAssociativeCache {
         /// Removes all items from the System.Collections.Generic.ICollection.
         /// </summary>
         public virtual void Clear() {
-            /* Invalidate any outstanding interators. */
+            /* Invalidate any outstanding iterators. */
             ++version_;
             count_ = 0;
 
@@ -417,7 +417,7 @@ namespace ParksComputing.SetAssociativeCache {
             /* Clear the value from the cache */
             valueArray_[set][valueIndex] = null;
 
-            /* Invalidate any outstanding interators. */
+            /* Invalidate any outstanding iterators. */
             ++version_;
             /* Mark this location in the pointer array as available. */
             pointerArray_[set][pointerIndex] = new KeyValuePair<int, int>(EMPTY_MARKER, pointerArray_[set][pointerIndex].Value);
@@ -717,7 +717,7 @@ namespace ParksComputing.SetAssociativeCache {
                 throw new ArgumentNullException(nameof(key));
             }
 
-            /* Invalidate any outstanding interators. */
+            /* Invalidate any outstanding iterators. */
             ++version_;
             /* Store the key/value pair at the designated location in the value array. */
             valueArray_[set][valueIndex] = new KeyValuePair<TKey, TValue>(key, value);
