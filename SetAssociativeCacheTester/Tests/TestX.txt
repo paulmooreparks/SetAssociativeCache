@@ -1,9 +1,0 @@
-4, 2, MRUReplacementAlgo
-Set, Eggs, Ham
-Set, Sam, Iam
-Set, Green, EggsAndHam
-Get, Eggs
-Get, Green
-ContainsKey, Eggs
-ContainsKey, Sam
-ContainsKey, Green

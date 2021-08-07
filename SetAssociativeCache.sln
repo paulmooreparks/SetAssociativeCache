@@ -7,9 +7,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SetAssociativeCache", "SetA
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SetAssociativeCacheTests", "SetAssociativeCacheTests\SetAssociativeCacheTests.csproj", "{E79F1BC4-854B-400F-AEC7-CAB67AAF0B41}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SetAssociativeCacheTester", "SetAssociativeCacheTester\SetAssociativeCacheTester.csproj", "{12FB6E40-E835-4767-B12C-981B4702E82B}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SetAssociativeCacheSample", "SetAssociativeCacheSample\SetAssociativeCacheSample.csproj", "{4CB14D62-D02C-442E-AEC5-09D6095121D9}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SetAssociativeCacheSample", "SetAssociativeCacheSample\SetAssociativeCacheSample.csproj", "{4CB14D62-D02C-442E-AEC5-09D6095121D9}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -25,10 +23,6 @@ Global
 		{E79F1BC4-854B-400F-AEC7-CAB67AAF0B41}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E79F1BC4-854B-400F-AEC7-CAB67AAF0B41}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E79F1BC4-854B-400F-AEC7-CAB67AAF0B41}.Release|Any CPU.Build.0 = Release|Any CPU
-		{12FB6E40-E835-4767-B12C-981B4702E82B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{12FB6E40-E835-4767-B12C-981B4702E82B}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{12FB6E40-E835-4767-B12C-981B4702E82B}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{12FB6E40-E835-4767-B12C-981B4702E82B}.Release|Any CPU.Build.0 = Release|Any CPU
 		{4CB14D62-D02C-442E-AEC5-09D6095121D9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{4CB14D62-D02C-442E-AEC5-09D6095121D9}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4CB14D62-D02C-442E-AEC5-09D6095121D9}.Release|Any CPU.ActiveCfg = Release|Any CPU
