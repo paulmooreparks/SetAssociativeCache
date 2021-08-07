@@ -1,4 +1,4 @@
-# SetAssociativeCache
+# Set-Associative Cache in C# for .NET Core
 This is a C# implementation of a set-associative cache with multiple policies (LRU, LFU, etc.). There is a basic 
 generic cache interface, ISetAssociativeCache, which is parameterized by the key type and value type of the items 
 stored in the cache, much like the IDictionary interface. Implementations of the interface may use different 
