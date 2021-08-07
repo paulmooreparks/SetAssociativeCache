@@ -10,6 +10,8 @@ For details on the design and development of the cache, see the series of articl
 * [Part 2: Interface Design](https://www.parkscomputing.com/2021/08/set-associative-cache-in-c-part-2-interface-design/)
 * Part 3: Implementation (coming soon)
 
+Here's a contrived example:
+
     /* Create a cache that maps string keys to string values, with 2 sets of 4 elements, or "ways". 
     In this example, we use the LruCache implementation, which removes the least-recently used 
     item (LRU) when a new item is added to a full set. Slots are tracked in an array rather than a 
