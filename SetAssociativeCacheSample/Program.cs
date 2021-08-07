@@ -1,6 +1,6 @@
 ﻿using System;
-using System.Collections.Immutable;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using NUnit.Framework;
 using ParksComputing.SetAssociativeCache;
 

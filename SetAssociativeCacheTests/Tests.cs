@@ -882,7 +882,7 @@ namespace SetAssociativeCacheTests {
             Assert.IsTrue(pairArray[5].Value == "value02");
             Assert.IsTrue(pairArray[6].Value == "value12");
             Assert.IsTrue(pairArray[7].Value == "value01");
-            
+
             Assert.Throws<ArgumentException>(() => {
                 cache.Add("key08", "newValue");
             });

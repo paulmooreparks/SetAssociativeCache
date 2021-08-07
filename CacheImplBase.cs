@@ -18,8 +18,8 @@ namespace ParksComputing.SetAssociativeCache {
         alls from the release version of the JITted assembly code, at least on Intel/AMD x64. 
         That actually surprises me. The properties still exist, though, in case external clients 
         need to know the values for some reason. */
-        protected int sets_; // Number of sets in the cache
-        protected int ways_; // Capacity of each set in the cache
+        protected readonly int sets_; // Number of sets in the cache
+        protected readonly int ways_; // Capacity of each set in the cache
         protected int count_; // Number of items in the cache
         protected int version_; // Increments each time an element is added or removed, to invalidate enumerators.
 
@@ -167,7 +167,7 @@ namespace ParksComputing.SetAssociativeCache {
             }
 
             /* Get the number of the set that would contain the new key. */
-            var set = FindSet(key);
+            int set = FindSet(key);
             int pointerIndex; // Index into the the pointer array where the value index is stored.
             int valueIndex; // Index into the value array where the actual cache item (key/value pair) is stored
 
@@ -263,7 +263,7 @@ namespace ParksComputing.SetAssociativeCache {
                 throw new ArgumentNullException(nameof(key));
             }
 
-            var set = FindSet(key);
+            int set = FindSet(key);
 
             for (int pointerIndex = 0; pointerIndex < ways_; ++pointerIndex) {
                 int valueIndex = pointerArray_[set][pointerIndex].Key;
@@ -292,7 +292,7 @@ namespace ParksComputing.SetAssociativeCache {
                 throw new ArgumentException($"Key field in item is null", nameof(item));
             }
 
-            var set = FindSet(item.Key);
+            int set = FindSet(item.Key);
 
             for (int pointerIndex = 0; pointerIndex < ways_; ++pointerIndex) {
                 int valueIndex = pointerArray_[set][pointerIndex].Key;
@@ -330,7 +330,7 @@ namespace ParksComputing.SetAssociativeCache {
             }
 
             value = default;
-            var set = FindSet(key);
+            int set = FindSet(key);
 
             for (int pointerIndex = 0; pointerIndex < ways_; ++pointerIndex) {
                 int valueIndex = pointerArray_[set][pointerIndex].Key;
@@ -363,7 +363,7 @@ namespace ParksComputing.SetAssociativeCache {
                 throw new ArgumentNullException(nameof(key));
             }
 
-            var set = FindSet(key);
+            int set = FindSet(key);
 
             for (int pointerIndex = 0; pointerIndex < ways_; ++pointerIndex) {
                 int valueIndex = pointerArray_[set][pointerIndex].Key;
@@ -391,7 +391,7 @@ namespace ParksComputing.SetAssociativeCache {
                 throw new ArgumentException($"Key field in item is null", nameof(item));
             }
 
-            var set = FindSet(item.Key);
+            int set = FindSet(item.Key);
 
             for (int pointerIndex = 0; pointerIndex < ways_; ++pointerIndex) {
                 int valueIndex = pointerArray_[set][pointerIndex].Key;
@@ -463,8 +463,8 @@ namespace ParksComputing.SetAssociativeCache {
             get {
                 List<TKey> value = new();
 
-                for (var set = 0; set < sets_; ++set) {
-                    foreach (var valueIndex in pointerArray_[set]) {
+                for (int set = 0; set < sets_; ++set) {
+                    foreach (KeyValuePair<int, int> valueIndex in pointerArray_[set]) {
                         if (valueIndex.Key != EMPTY_MARKER) {
                             value.Add(valueArray_[set][valueIndex.Key].Value.Key);
                         }
@@ -489,8 +489,8 @@ namespace ParksComputing.SetAssociativeCache {
             get {
                 List<TValue> value = new();
 
-                for (var set = 0; set < sets_; ++set) {
-                    foreach (var valueIndex in pointerArray_[set]) {
+                for (int set = 0; set < sets_; ++set) {
+                    foreach (KeyValuePair<int, int> valueIndex in pointerArray_[set]) {
                         if (valueIndex.Key != EMPTY_MARKER) {
                             value.Add(valueArray_[set][valueIndex.Key].Value.Value);
                         }
@@ -529,7 +529,7 @@ namespace ParksComputing.SetAssociativeCache {
                 throw new ArgumentOutOfRangeException(nameof(arrayIndex));
             }
 
-            for (var set = 0; set < sets_; ++set) {
+            for (int set = 0; set < sets_; ++set) {
                 foreach (KeyValuePair<int, int> keyArrayItem in pointerArray_[set]) {
                     if (keyArrayItem.Key != EMPTY_MARKER) {
                         array[arrayIndex] = new KeyValuePair<TKey, TValue>(valueArray_[set][keyArrayItem.Key].Value.Key, valueArray_[set][keyArrayItem.Key].Value.Value);
@@ -662,7 +662,7 @@ namespace ParksComputing.SetAssociativeCache {
             int valueIndex; // Index into the value array where the actual cache item (key/value pair) is stored
 
             /* Get the number of the set that would contain the new key. */
-            var set = FindSet(key);
+            int set = FindSet(key);
             int pointerIndex;
 
             for (pointerIndex = 0; pointerIndex < ways_; ++pointerIndex) {
