@@ -43,3 +43,17 @@ Here's a contrived example:
     }
 
     /* Note that Brangelina and Bennifer have been evicted from their respective sets. */
+
+Here's the result after running the above code:
+
+    There is room for 8 couples. Let the games begin....
+    Out of 10 couples added, 8 couples remain in the cache
+    
+    Burt loves Loni
+    John loves Yoko
+    Sonny loves Cher
+    Desi loves Lucy
+    Kanye loves Kim
+    Donald loves Ivana
+    Johnny loves June
+    Kurt loves Goldie
