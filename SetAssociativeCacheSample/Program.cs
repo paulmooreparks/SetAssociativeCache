@@ -7,10 +7,44 @@ using ParksComputing.SetAssociativeCache;
 namespace SetAssociativeCacheSample {
     class Program {
         static void Main(string[] args) {
-            CelebCouples();
+            CelebCouplesReadme();
         }
 
-        static void CelebCouples() {
+        static void CelebCouplesReadme() {
+            /* Create a cache that maps string keys to string values, with 2 sets of 4 elements, or "ways". 
+            In this example, we use the LruCache implementation, which removes the least-recently used 
+            item (LRU) when a new item is added to a full set. Slots are tracked in an array rather than a 
+            linked list, in order to keep it CPU-cache friendly. 
+
+            If we decide later that a least-frequently used cache (LFU) cache is more appropriate, we can 
+            change LruCache to LfuCache. We could also add new classes with other implementations. */
+
+            var coupleCache = new LruCache<string, string>(sets: 2, ways: 4);
+
+            Console.WriteLine($"There is room for {coupleCache.Capacity} couples. Let the games begin....");
+
+            coupleCache["Brad"] = "Angelina";
+            coupleCache["Ben"] = "Jennifer";
+            coupleCache["Kanye"] = "Kim";
+            coupleCache["Sonny"] = "Cher";
+            coupleCache["Desi"] = "Lucy";
+            coupleCache["Donald"] = "Ivana";
+            coupleCache["Burt"] = "Loni";
+            coupleCache["Johnny"] = "June";
+            coupleCache["John"] = "Yoko";
+            coupleCache["Kurt"] = "Goldie";
+
+            Console.WriteLine($"Out of 10 couples added, {coupleCache.Count} couples remain in the cache");
+            Console.WriteLine();
+
+            foreach (var couple in coupleCache) {
+                Console.WriteLine($"{couple.Key} loves {couple.Value}");
+            }
+
+            /* Note that Brangelina and Bennifer have been evicted from their respective sets. */
+        }
+
+        static void CelebCouplesArticlePart1() {
             /* Create a cache that maps string keys to string values, with 3 sets of 3 elements, or "ways". 
             The concrete type implements the specific cache-eviction policy. In this example, we use LruCache, 
             which removes the least-recently used item (LRU) when a new item is added to a full set. Slots 
