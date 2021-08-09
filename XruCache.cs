@@ -39,13 +39,13 @@ namespace ParksComputing.SetAssociativeCache {
         /// <param name="pointerIndex">The index into the key array.</param>
         protected override void PromoteKey(int set, int pointerIndex) {
             int count = pointerIndex;
-            int newHeadItemKey = pointerArray_[set][pointerIndex].Key;
-            int newHeadItemValue = pointerArray_[set][pointerIndex].Value;
+            int newKey = pointerArray_[set][pointerIndex].Key;
+            long newValue = pointerArray_[set][pointerIndex].Value;
 
             if (count > 0) {
                 /* Move the key to the lowest index in the set. */
                 System.Array.Copy(pointerArray_[set], 0, pointerArray_[set], 1, count);
-                pointerArray_[set][0] = new KeyValuePair<int, int>(newHeadItemKey, newHeadItemValue);
+                pointerArray_[set][0] = new KeyValuePair<int, long>(newKey, newValue);
             }
         }
 
@@ -57,13 +57,13 @@ namespace ParksComputing.SetAssociativeCache {
         protected override void DemoteKey(int set, int pointerIndex) {
             int tailIndex = ways_ - 1;
             int count = ways_ - pointerIndex - 1;
-            int newTailItemKey = pointerArray_[set][pointerIndex].Key;
-            int newTailItemValue = pointerArray_[set][pointerIndex].Value;
+            int newKey = pointerArray_[set][pointerIndex].Key;
+            long newValue = pointerArray_[set][pointerIndex].Value;
 
             if (count > 0 && pointerIndex < tailIndex) {
                 /* Move the key to the highest index in the set. */
                 System.Array.Copy(pointerArray_[set], pointerIndex + 1, pointerArray_[set], pointerIndex, count);
-                pointerArray_[set][tailIndex] = new KeyValuePair<int, int>(newTailItemKey, newTailItemValue);
+                pointerArray_[set][tailIndex] = new KeyValuePair<int, long>(newKey, newValue);
             }
         }
     }

@@ -31,7 +31,7 @@ namespace ParksComputing.SetAssociativeCache {
         specific eviction policy. This array is sorted/rearranged/whatever according to the needs 
         of the cache policy, since it's faster to move integer pairs around, and they're close 
         together in the CPU cache. */
-        protected KeyValuePair<int, int>[][] pointerArray_;
+        protected KeyValuePair<int, long>[][] pointerArray_;
 
         /* valueArray_ stores the key/value pairs of the actual cache items. Once an item is placed 
         at an index in this array, it stays there unless it is replaced with a new key/value pair or 
@@ -61,12 +61,12 @@ namespace ParksComputing.SetAssociativeCache {
             ++version_;
             count_ = 0;
 
-            pointerArray_ = new KeyValuePair<int, int>[sets_][];
+            pointerArray_ = new KeyValuePair<int, long>[sets_][];
             valueArray_ = new KeyValuePair<TKey, TValue>?[sets_][];
 
             for (int set = 0; set < sets_; set++) {
-                pointerArray_[set] = new KeyValuePair<int, int>[ways_];
-                Array.Fill(pointerArray_[set], new KeyValuePair<int, int>(EMPTY_MARKER, 0));
+                pointerArray_[set] = new KeyValuePair<int, long>[ways_];
+                Array.Fill(pointerArray_[set], new KeyValuePair<int, long>(EMPTY_MARKER, 0));
                 valueArray_[set] = new KeyValuePair<TKey, TValue>?[ways_];
             }
 
@@ -90,11 +90,7 @@ namespace ParksComputing.SetAssociativeCache {
 
             set {
                 AddOrUpdate(key, value, (key, value, set, pointerIndex, valueIndex) => {
-                    /* Decrement the count for the item that we're replacing. */
-                    --count_;
-                    /* Delegate adding the cache item and managing the data for the cache policy 
-                    to the Add method. */
-                    Add(key, value, set, pointerIndex, valueIndex);
+                    ReplaceItem(key, value, set, pointerIndex, valueIndex);
                 });
             }
         }
@@ -130,95 +126,6 @@ namespace ParksComputing.SetAssociativeCache {
         /// The number of elements contained in the System.Collections.Generic.ICollection.
         /// </value>
         public int Count => count_;
-
-        /// <summary>
-        /// Gets the offset into the pointer set for the item which should be evicted from the cache.
-        /// </summary>
-        /// <remarks>
-        /// This is implemented in the derived class that actually defines and implements 
-        /// the cache policy.
-        /// </remarks>
-        protected abstract int EvictionPointerIndex { get; }
-
-        /// <summary>
-        /// Adds an element with the provided <paramref name="key"/> and <paramref name="value"/> 
-        /// to the ParksComputing.ISetAssociativeCache if the <paramref name="key"/> is not found. 
-        /// If the <paramref name="key"/> is found, call the <paramref name="onKeyExists"/> 
-        /// delegate to handle the situation.
-        /// </summary>
-        /// <param name="key">The object to use as the key of the element to add.</param>
-        /// <param name="value">The object to use as the value of the element to add.</param>
-        /// <param name="onKeyExists">The delegate to call when the <paramref name="key"/> 
-        /// is already present.</param>
-        /// <remarks>
-        /// This function lets us delegate behavior for when a key is already present. If called 
-        /// from the index method (this[key]), we want to update an existing key. If called from 
-        /// the Add method, we want to throw an <c>ArgumentException</c>.
-        /// </remarks>
-        /// <exception cref="System.ArgumentNullException">Either <paramref name="key"/> or 
-        /// <paramref name="onKeyExists"/> is null.</exception>
-        protected void AddOrUpdate(TKey key, TValue value, Action<TKey, TValue, int, int, int> onKeyExists) {
-            if (key == null) {
-                throw new ArgumentNullException(nameof(key));
-            }
-
-            if (onKeyExists == null) {
-                throw new ArgumentNullException(nameof(onKeyExists));
-            }
-
-            /* Get the number of the set that would contain the new key. */
-            int set = FindSet(key);
-            int pointerIndex; // Index into the the pointer array where the value index is stored.
-            int valueIndex; // Index into the value array where the actual cache item (key/value pair) is stored
-
-            /* Loop over the set */
-            for (pointerIndex = 0; pointerIndex < ways_; ++pointerIndex) {
-                /* Get the index into the value array */
-                valueIndex = pointerArray_[set][pointerIndex].Key;
-
-                /* If the index is a sentinel value for "nothing stored here"... */
-                if (valueIndex == EMPTY_MARKER) {
-                    /* Find the first empty entry in the value array */
-                    valueIndex = 0;
-
-                    while (valueIndex < ways_ && valueArray_[set][valueIndex] != null) {
-                        ++valueIndex;
-                    }
-
-                    /* Create a new entry in the pointer array. */
-                    pointerArray_[set][pointerIndex] = new KeyValuePair<int, int>(valueIndex, pointerArray_[set][pointerIndex].Value);
-
-                    /* Delegate adding the cache item and managing the data for the cache policy 
-                    to the Add method. */
-                    Add(key, value, set, pointerIndex, valueIndex);
-                    return;
-                }
-
-                /* If the new key is equal to the key at the current position... */
-                if (valueArray_[set][valueIndex].Value.Key.Equals(key)) {
-                    valueIndex = pointerArray_[set][pointerIndex].Key;
-                    /* Delegate behavior to the onKeyExists delegate. */
-                    onKeyExists(key, value, set, pointerIndex, valueIndex);
-                    return;
-                }
-            }
-
-            /* If we get here, then the set is full. Evict the appropriate element depending on 
-            policy, then add the new value at that offset. */
-
-            --count_;
-
-            /* The ReplacementOffset property gives us the offset into the set for the key that 
-            will be evicted. */
-            pointerIndex = EvictionPointerIndex;
-
-            /* Get the index into the value array for where the evicted cache item is stored. */
-            valueIndex = pointerArray_[set][pointerIndex].Key;
-            /* Delegate adding the cache item and managing the data for the cache policy to the 
-            Add method. */
-            Add(key, value, set, pointerIndex, valueIndex);
-            return;
-        }
 
         /// <summary>
         /// Adds an element with the provided <paramref name="key"/> and <paramref name="value"/> 
@@ -337,6 +244,10 @@ namespace ParksComputing.SetAssociativeCache {
 
                 /* If the key is found in the value array... */
                 if (valueIndex != EMPTY_MARKER && valueArray_[set][valueIndex].Value.Key.Equals(key)) {
+                    if (FilterGetValue(key, value, set, pointerIndex, valueIndex)) {
+                        return false;
+                    }
+
                     /* "Touch" the key to note that it has been accessed. */
                     PromoteKey(set, pointerIndex);
                     /* Return the value found at this location in the value array. */
@@ -349,6 +260,60 @@ namespace ParksComputing.SetAssociativeCache {
         }
 
         bool IReadOnlyDictionary<TKey, TValue>.TryGetValue(TKey key, out TValue value) => TryGetValue(key, out value);
+
+        /// <summary>
+        /// If the given <paramref name="key"/> would cause an existing key to be evicted, return <c>true</c> and set 
+        /// <paramref name="evictKey"/> to the key of the item that would be evicted if the new <paramref name="key"/> 
+        /// were added.
+        /// </summary>
+        /// <param name="key">Key to test.</param>
+        /// <param name="evictKey">Key of cache item that would be evicted, or default key value if return is false.</param>
+        /// <returns><c>true</c> if a key would be evicted; <c>false</c> otherwise.</returns>
+        /// <exception cref="System.ArgumentNullException">key is null.</exception>
+        public bool TryGetEvictKey(TKey key, out TKey evictKey) {
+            if (key == null) {
+                throw new ArgumentNullException(nameof(key));
+            }
+
+            evictKey = default;
+
+            /* Get the number of the set that would contain the new key. */
+            int set = FindSet(key);
+            int pointerIndex;
+            int valueIndex = EMPTY_MARKER;
+
+            for (pointerIndex = 0; pointerIndex < ways_; ++pointerIndex) {
+                valueIndex = pointerArray_[set][pointerIndex].Key;
+
+                /* If the slot is empty, the item may go here. */
+                if (valueIndex == EMPTY_MARKER) {
+                    /* No eviction necessary since item will be placed in empty slot in value array. */
+                    return false;
+                }
+
+                /* If this item has the same key, can be replaced by new item with same key. */
+                if (valueArray_[set][valueIndex].Value.Key.Equals(key)) {
+                    evictKey = valueArray_[set][valueIndex].Value.Key;
+                    /* Evicted by item with same key. */
+                    return true;
+                }
+
+                /* If this item is due for eviction because of policy, the new item can go in its place. */
+                if (IsItemEvictable(set, pointerIndex)) {
+                    evictKey = valueArray_[set][valueIndex].Value.Key;
+                    /* Evicted by item with different key. */
+                    return true;
+                }
+            }
+
+            /* If we get here, the set is full of items that cannot be replaced by an item with
+            the given key. Report the key that would be evicted by an item with this key, according 
+            to the policy of the derived class. */
+            pointerIndex = GetEvictionPointerIndex(set);
+            valueIndex = pointerArray_[set][pointerIndex].Key;
+            evictKey = valueArray_[set][valueIndex].Value.Key;
+            return true;
+        }
 
         /// <summary>
         /// Removes the element with the specified <paramref name="key"/> from the cache.
@@ -370,9 +335,10 @@ namespace ParksComputing.SetAssociativeCache {
 
                 if (valueIndex != EMPTY_MARKER && valueArray_[set][valueIndex].Value.Key.Equals(key)) {
                     RemoveItem(set, pointerIndex, valueIndex);
+                    DemoteKey(set, pointerIndex);
                     return true;
                 }
-            };
+            }
 
             return false;
         }
@@ -398,55 +364,13 @@ namespace ParksComputing.SetAssociativeCache {
 
                 if (valueIndex != EMPTY_MARKER &&
                     valueArray_[set][valueIndex].Value.Key.Equals(item.Key) &&
-                    valueArray_[set][valueIndex].Value.Value.Equals(item.Value)) {
+                    valueArray_[set][valueIndex].Value.Value.Equals(item.Value)) 
+                {
                     RemoveItem(set, pointerIndex, valueIndex);
+                    DemoteKey(set, pointerIndex);
                     return true;
                 }
             };
-
-            return false;
-        }
-
-        /// <summary>
-        /// Remove an item from the value array and mark it as empty in the pointer array.
-        /// </summary>
-        /// <param name="set">The set in which the item is located.</param>
-        /// <param name="pointerIndex">The index into the pointer array.</param>
-        /// <param name="valueIndex">The index into the value array.</param>
-        private void RemoveItem(int set, int pointerIndex, int valueIndex) {
-            /* Clear the value from the cache */
-            valueArray_[set][valueIndex] = null;
-
-            /* Invalidate any outstanding iterators. */
-            ++version_;
-            /* Mark this location in the pointer array as available. */
-            pointerArray_[set][pointerIndex] = new KeyValuePair<int, int>(EMPTY_MARKER, pointerArray_[set][pointerIndex].Value);
-            DemoteKey(set, pointerIndex);
-            --count_;
-        }
-
-        /// <summary>
-        /// Walks over each element of a set in the pointer array and calls a delegate for each 
-        /// element, passing the set and the pointer-array index corresponding to the current 
-        /// element to the delegate. If the delegate returns <c>true</c>, the iteration stops.
-        /// </summary>
-        /// <param name="set">The set to iterate over.</param>
-        /// <param name="func">The delegate to call for each element.</param>
-        /// <returns>
-        /// <c>true</c> if the delegate returns <c>true</c> at any time; <c>false</c> otherwise.
-        /// </returns>
-        /// <remarks>
-        /// This is a hold-over from an earlier version of the code where iteration was more 
-        /// complicated. I kept this here in case it might be useful in the future, but with 
-        /// the simplified iteration the cache uses now it's not much use currently.
-        /// </remarks>
-        protected bool WalkSet(int set, Func<int, int, bool> func) {
-            /* Loop over the set */
-            for (int pointerIndex = 0; pointerIndex < ways_; ++pointerIndex) {
-                if (func(set, pointerIndex)) {
-                    return true;
-                }
-            }
 
             return false;
         }
@@ -464,7 +388,7 @@ namespace ParksComputing.SetAssociativeCache {
                 List<TKey> value = new();
 
                 for (int set = 0; set < sets_; ++set) {
-                    foreach (KeyValuePair<int, int> valueIndex in pointerArray_[set]) {
+                    foreach (KeyValuePair<int, long> valueIndex in pointerArray_[set]) {
                         if (valueIndex.Key != EMPTY_MARKER) {
                             value.Add(valueArray_[set][valueIndex.Key].Value.Key);
                         }
@@ -490,7 +414,7 @@ namespace ParksComputing.SetAssociativeCache {
                 List<TValue> value = new();
 
                 for (int set = 0; set < sets_; ++set) {
-                    foreach (KeyValuePair<int, int> valueIndex in pointerArray_[set]) {
+                    foreach (KeyValuePair<int, long> valueIndex in pointerArray_[set]) {
                         if (valueIndex.Key != EMPTY_MARKER) {
                             value.Add(valueArray_[set][valueIndex.Key].Value.Value);
                         }
@@ -530,7 +454,7 @@ namespace ParksComputing.SetAssociativeCache {
             }
 
             for (int set = 0; set < sets_; ++set) {
-                foreach (KeyValuePair<int, int> keyArrayItem in pointerArray_[set]) {
+                foreach (KeyValuePair<int, long> keyArrayItem in pointerArray_[set]) {
                     if (keyArrayItem.Key != EMPTY_MARKER) {
                         array[arrayIndex] = new KeyValuePair<TKey, TValue>(valueArray_[set][keyArrayItem.Key].Value.Key, valueArray_[set][keyArrayItem.Key].Value.Value);
                         ++arrayIndex;
@@ -548,6 +472,290 @@ namespace ParksComputing.SetAssociativeCache {
         public IEnumerator<KeyValuePair<TKey, TValue>> GetEnumerator() {
             return new CacheEnumerator(this);
         }
+
+        /// <summary>
+        /// Returns an enumerator that iterates through a collection.
+        /// </summary>
+        /// <returns>An System.Collections.IEnumerator object that can be used to iterate through the collection.</returns>
+        IEnumerator IEnumerable.GetEnumerator() {
+            return GetEnumerator();
+        }
+
+        /// <summary>
+        /// Gets a value indicating whether the System.Collections.Generic.ICollection is read-only.
+        /// </summary>
+        /// <value>
+        /// <c>true</c> if the System.Collections.Generic.ICollection is read-only; otherwise, <c>false</c>.
+        /// </value>
+        public bool IsReadOnly => false;
+
+        /// <summary>
+        /// Determines if an item that has been retrieved from the cache is now invalid (expired, 
+        /// etc.). If so, removes it from the cache and returns <c>true</c> to indicate that the 
+        /// item has been filtered.
+        /// </summary>
+        /// <param name="key">The key of the element to test.</param>
+        /// <param name="value">The value of the element to test.</param>
+        /// <param name="set">The set in which the element exists.</param>
+        /// <param name="pointerIndex">The index into the pointer set at which the element's value index is kept.</param>
+        /// <param name="valueIndex">The index into the item set at which the element is stored.</param>
+        /// <exception cref="System.ArgumentNullException"><paramref name="key"/> is null.</exception>
+        protected virtual bool FilterGetValue(TKey key, TValue value, int set, int pointerIndex, int valueIndex) {
+            return false;
+        }
+
+        /// <summary>
+        /// Adds an element with the provided <paramref name="key"/> and <paramref name="value"/> 
+        /// to the ParksComputing.ISetAssociativeCache if the <paramref name="key"/> is not found. 
+        /// If the <paramref name="key"/> is found, call the <paramref name="OnKeyExists"/> 
+        /// delegate to handle the situation.
+        /// </summary>
+        /// <param name="key">The object to use as the key of the element to add.</param>
+        /// <param name="value">The object to use as the value of the element to add.</param>
+        /// <param name="OnKeyExists">The delegate to call when the <paramref name="key"/> 
+        /// is already present.</param>
+        /// <remarks>
+        /// This function lets us delegate behavior for when a key is already present. If called 
+        /// from the index method (this[key]), we want to update an existing key. If called from 
+        /// the Add method, we want to throw an <c>ArgumentException</c>.
+        /// </remarks>
+        /// <exception cref="System.ArgumentNullException">Either <paramref name="key"/> or 
+        /// <paramref name="OnKeyExists"/> is null.</exception>
+        protected void AddOrUpdate(TKey key, TValue value, Action<TKey, TValue, int, int, int> OnKeyExists) {
+            if (key == null) {
+                throw new ArgumentNullException(nameof(key));
+            }
+
+            if (OnKeyExists == null) {
+                throw new ArgumentNullException(nameof(OnKeyExists));
+            }
+
+            /* Get the number of the set that would contain the new key. */
+            int set = FindSet(key);
+
+            if (!TryAddToSet(key, value, set, OnKeyExists)) {
+                EvictAndReplaceItem(key, value, set);
+            }
+
+            return;
+        }
+
+        protected virtual bool TryAddToSet(TKey key, TValue value, int set, Action<TKey, TValue, int, int, int> OnKeyExists) {
+            /* Loop over the set */
+            for (int pointerIndex = 0; pointerIndex < ways_; ++pointerIndex) {
+                /* Get the index into the value array */
+                int valueIndex = pointerArray_[set][pointerIndex].Key;
+
+                if (TryAddAtIndex(key, value, set, pointerIndex, valueIndex, OnKeyExists)) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        protected virtual bool TryAddAtIndex(TKey key, TValue value, int set, int pointerIndex, int valueIndex,
+            Action<TKey, TValue, int, int, int> OnKeyExists) {
+            /* If the index is a sentinel value for "nothing stored here"... */
+            if (valueIndex == EMPTY_MARKER) {
+                /* Find the first empty entry in the value array */
+                valueIndex = 0;
+
+                while (valueIndex < ways_ && valueArray_[set][valueIndex] != null) {
+                    ++valueIndex;
+                }
+
+                AddItem(key, value, set, pointerIndex, valueIndex);
+                UpdateSet(set, pointerIndex);
+                return true;
+            }
+
+            /* If the new key is equal to the key at the current position... */
+            if (valueArray_[set][valueIndex].Value.Key.Equals(key)) {
+                valueIndex = pointerArray_[set][pointerIndex].Key;
+                /* Delegate behavior to the onKeyExists delegate. */
+                OnKeyExists(key, value, set, pointerIndex, valueIndex);
+                return true;
+            }
+
+
+            /* If this item is due for eviction because of policy... */
+            if (IsItemEvictable(set, pointerIndex)) {
+                /* ...the new item can go in its place. */
+                valueIndex = pointerArray_[set][pointerIndex].Key;
+                RemoveItem(set, pointerIndex, valueIndex);
+                AddItem(key, value, set, pointerIndex, valueIndex);
+                return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Adds an element with the provided <paramref name="key"/> and value to the ParksComputing.ISetAssociativeCache.
+        /// </summary>
+        /// <param name="key">The object to use as the key of the element to add.</param>
+        /// <param name="value">The object to use as the value of the element to add.</param>
+        /// <param name="set">The set in which to add the element.</param>
+        /// <param name="pointerIndex">The index into the pointer set at which to add the element's value index.</param>
+        /// <param name="valueIndex">The index into the item set at which the element is stored.</param>
+        /// <exception cref="System.ArgumentNullException"><paramref name="key"/> is null.</exception>
+        protected void AddItem(TKey key, TValue value, int set, int pointerIndex, int valueIndex) {
+            if (key == null) {
+                throw new ArgumentNullException(nameof(key));
+            }
+
+            long oldValue = pointerArray_[set][pointerIndex].Value;
+            pointerArray_[set][pointerIndex] = new KeyValuePair<int, long>(valueIndex, oldValue);
+            valueArray_[set][valueIndex] = new KeyValuePair<TKey, TValue>(key, value);
+
+            ++version_;
+            ++count_;
+        }
+
+        /// <summary>
+        /// Remove an item from the value array and mark it as empty in the pointer array.
+        /// </summary>
+        /// <param name="set">The set in which the item is located.</param>
+        /// <param name="pointerIndex">The index into the pointer array.</param>
+        /// <param name="valueIndex">The index into the value array.</param>
+        protected void RemoveItem(int set, int pointerIndex, int valueIndex) {
+            /* Clear the value from the cache */
+            valueArray_[set][valueIndex] = null;
+
+            /* Mark this location in the pointer array as available. */
+            long oldValue = pointerArray_[set][pointerIndex].Value;
+            pointerArray_[set][pointerIndex] = new KeyValuePair<int, long>(EMPTY_MARKER, oldValue);
+
+            ++version_;
+            --count_;
+        }
+
+        /// <summary>
+        /// Evicts an element and replaces it with a new element with the provided <paramref name="key"/> and 
+        /// <paramref name="value"/>. 
+        /// </summary>
+        /// <param name="key">The object to use as the key of the element to add.</param>
+        /// <param name="value">The object to use as the value of the element to add.</param>
+        /// <param name="set">The set in which to add the element.</param>
+        /// <exception cref="System.ArgumentNullException"><paramref name="key"/> is null.</exception>
+        protected virtual void EvictAndReplaceItem(TKey key, TValue value, int set) {
+            if (key == null) {
+                throw new ArgumentNullException(nameof(key));
+            }
+
+            int pointerIndex = GetEvictionPointerIndex(set);
+            /* Get the index into the value array for where the evicted cache item is stored. */
+            int valueIndex = pointerArray_[set][pointerIndex].Key;
+            ReplaceItem(key, value, set, pointerIndex, valueIndex);
+        }
+
+        /// <summary>
+        /// Replaces an element with a new element with the provided <paramref name="key"/> and 
+        /// <paramref name="value"/>. 
+        /// </summary>
+        /// <param name="key">The object to use as the key of the element to add.</param>
+        /// <param name="value">The object to use as the value of the element to add.</param>
+        /// <param name="set">The set in which to add the element.</param>
+        /// <param name="pointerIndex">The index into the pointer set at which to add the element's value index.</param>
+        /// <param name="valueIndex">The index into the item set at which the element is stored.</param>
+        /// <exception cref="System.ArgumentNullException"><paramref name="key"/> is null.</exception>
+        protected virtual void ReplaceItem(TKey key, TValue value, int set, int pointerIndex, int valueIndex) {
+            if (key == null) {
+                throw new ArgumentNullException(nameof(key));
+            }
+
+            RemoveItem(set, pointerIndex, valueIndex);
+            AddItem(key, value, set, pointerIndex, valueIndex);
+            UpdateSet(set, pointerIndex);
+        }
+
+        /// <summary>
+        /// Given a <paramref name="key"/>, find the set into which the key should be placed.
+        /// </summary>
+        /// <param name="key">The key used to find the appropriate set.</param>
+        /// <exception cref="System.ArgumentNullException"><paramref name="key"/> is null.</exception>
+        /// <returns>The set in which the <paramref name="key"/> should be kept.</returns>
+        protected int FindSet(TKey key) {
+            if (key == null) {
+                throw new ArgumentNullException(nameof(key));
+            }
+
+            ulong keyHash = key.GetHashValue();
+            return (int)(keyHash % (ulong)sets_);
+        }
+
+        /// <summary>
+        /// Walks over each element of a set in the pointer array and calls a delegate for each 
+        /// element, passing the set and the pointer-array index corresponding to the current 
+        /// element to the delegate. If the delegate returns <c>true</c>, the iteration stops.
+        /// </summary>
+        /// <param name="set">The set to iterate over.</param>
+        /// <param name="func">The delegate to call for each element.</param>
+        /// <returns>
+        /// <c>true</c> if the delegate returns <c>true</c> at any time; <c>false</c> otherwise.
+        /// </returns>
+        /// <remarks>
+        /// This is a hold-over from an earlier version of the code where iteration was more 
+        /// complicated. I kept this here in case it might be useful in the future, but with 
+        /// the simplified iteration the cache uses now it's not much use currently.
+        /// </remarks>
+        protected bool WalkSet(int set, Func<int, int, bool> func) {
+            /* Loop over the set */
+            for (int pointerIndex = 0; pointerIndex < ways_; ++pointerIndex) {
+                if (func(set, pointerIndex)) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Determine if the item in the given <paramref name="set"/> at the given 
+        /// <paramref name="pointerIndex"/> can be replaced by an item with the 
+        /// given <paramref name="key"/>, if that item is added to the set.
+        /// </summary>
+        /// <param name="key">The key of the item to add.</param>
+        /// <param name="set">The set in which the <paramref name="key"/> would be added.</param>
+        /// <param name="pointerIndex">The index into the <paramref name="set"/> array for the 
+        /// item being tested.</param>
+        /// <returns><c>true</c> if the item at <paramref name="pointerIndex"/> in <paramref name="set"/> 
+        /// can be replaced by the addition of an item with the given <paramref name="key"/>; 
+        /// <c>false </c> otherwise.</returns>
+        protected virtual bool IsItemEvictable(int set, int pointerIndex) {
+            return false;
+        }
+
+        /// <summary>
+        /// Gets the index into the pointer array for the item which should be evicted from the set.
+        /// </summary>
+        /// <remarks>
+        /// This is implemented in the derived class that actually defines and implements 
+        /// the cache policy.
+        /// </remarks>
+        protected abstract int GetEvictionPointerIndex(int set);
+
+        /// <summary>
+        /// Update and adjust the pointer array as necessary according to the details of the cache policy.
+        /// </summary>
+        /// <param name="set">Which set to update.</param>
+        /// <param name="pointerIndex">The index into the pointer set.</param>
+        protected abstract void UpdateSet(int set, int pointerIndex);
+
+        /// <summary>
+        /// Mark an item as having the highest rank in the set.
+        /// </summary>
+        /// <param name="set">The set in which the key is stored.</param>
+        /// <param name="pointerIndex">The index into the pointer set.</param>
+        protected abstract void PromoteKey(int set, int pointerIndex);
+
+        /// <summary>
+        /// Mark an item as having the lowest rank in the set.
+        /// </summary>
+        /// <param name="set">The set in which the key is stored.</param>
+        /// <param name="pointerIndex">The index into the pointer set.</param>
+        protected abstract void DemoteKey(int set, int pointerIndex);
 
         /// <summary>
         /// Emumerator class used to support calling foreach (or equivalent iteration structures) 
@@ -626,126 +834,5 @@ namespace ParksComputing.SetAssociativeCache {
             public void Dispose() {
             }
         }
-
-        /// <summary>
-        /// Returns an enumerator that iterates through a collection.
-        /// </summary>
-        /// <returns>An System.Collections.IEnumerator object that can be used to iterate through the collection.</returns>
-        IEnumerator IEnumerable.GetEnumerator() {
-            return GetEnumerator();
-        }
-
-        /// <summary>
-        /// Gets a value indicating whether the System.Collections.Generic.ICollection is read-only.
-        /// </summary>
-        /// <value>
-        /// <c>true</c> if the System.Collections.Generic.ICollection is read-only; otherwise, <c>false</c>.
-        /// </value>
-        public bool IsReadOnly { get => false; }
-
-        /// <summary>
-        /// If the given <paramref name="key"/> would cause an existing key to be evicted, return <c>true</c> and set 
-        /// <paramref name="evictKey"/> to the key of the item that would be evicted if the new <paramref name="key"/> 
-        /// were added.
-        /// </summary>
-        /// <param name="key">Key to test.</param>
-        /// <param name="evictKey">Key of cache item that would be evicted, or default key value if return is false.</param>
-        /// <returns><c>true</c> if a key would be evicted; <c>false</c> otherwise.</returns>
-        /// <exception cref="System.ArgumentNullException">key is null.</exception>
-        public bool TryGetEvictKey(TKey key, out TKey evictKey) {
-            evictKey = default;
-
-            if (key == null) {
-                throw new ArgumentNullException(nameof(key));
-            }
-
-            int valueIndex; // Index into the value array where the actual cache item (key/value pair) is stored
-
-            /* Get the number of the set that would contain the new key. */
-            int set = FindSet(key);
-            int pointerIndex;
-
-            for (pointerIndex = 0; pointerIndex < ways_; ++pointerIndex) {
-                valueIndex = pointerArray_[set][pointerIndex].Key;
-
-                /* If the key is found, no eviction. */
-                if (valueArray_[set][valueIndex].Value.Key.Equals(key)) {
-                    return false;
-                }
-
-                /* If the slot is empty, no eviction. */
-                if (valueIndex == EMPTY_MARKER) {
-                    return false;
-                }
-            };
-
-            /* If we get here, the set is full and adding the key would cause an eviction. Report 
-            the key that would be evicted by this replacement, according to the policy of the 
-            derived class. */
-            pointerIndex = EvictionPointerIndex;
-            valueIndex = pointerArray_[set][pointerIndex].Key;
-            evictKey = valueArray_[set][valueIndex].Value.Key;
-            return true;
-        }
-
-        /// <summary>
-        /// Given a <paramref name="key"/>, find the set into which the key should be placed.
-        /// </summary>
-        /// <param name="key">The key used to find the appropriate set.</param>
-        /// <exception cref="System.ArgumentNullException"><paramref name="key"/> is null.</exception>
-        /// <returns>The set in which the <paramref name="key"/> should be kept.</returns>
-        protected int FindSet(TKey key) {
-            if (key == null) {
-                throw new ArgumentNullException(nameof(key));
-            }
-
-            ulong keyHash = key.GetHashValue();
-            return (int)(keyHash % (ulong)sets_);
-        }
-
-        /// <summary>
-        /// Adds an element with the provided <paramref name="key"/> and value to the ParksComputing.ISetAssociativeCache.
-        /// </summary>
-        /// <param name="key">The object to use as the key of the element to add.</param>
-        /// <param name="value">The object to use as the value of the element to add.</param>
-        /// <param name="set">The set in which to add the element.</param>
-        /// <param name="pointerIndex">The index into the pointer set at which to add the element's value index.</param>
-        /// <param name="valueIndex">The index into the item set at which the element is stored.</param>
-        /// <exception cref="System.ArgumentNullException"><paramref name="key"/> is null.</exception>
-        protected void Add(TKey key, TValue value, int set, int pointerIndex, int valueIndex) {
-            if (key == null) {
-                throw new ArgumentNullException(nameof(key));
-            }
-
-            /* Invalidate any outstanding iterators. */
-            ++version_;
-            /* Store the key/value pair at the designated location in the value array. */
-            valueArray_[set][valueIndex] = new KeyValuePair<TKey, TValue>(key, value);
-            ++count_;
-
-            UpdateSet(set, pointerIndex);
-        }
-
-        /// <summary>
-        /// Update and adjust the pointer array as necessary according to the details of the cache policy.
-        /// </summary>
-        /// <param name="set">Which set to update.</param>
-        /// <param name="pointerIndex">The index into the pointer set.</param>
-        protected abstract void UpdateSet(int set, int pointerIndex);
-
-        /// <summary>
-        /// Mark an item as having the highest rank in the set.
-        /// </summary>
-        /// <param name="set">The set in which the key is stored.</param>
-        /// <param name="pointerIndex">The index into the pointer set.</param>
-        protected abstract void PromoteKey(int set, int pointerIndex);
-
-        /// <summary>
-        /// Mark an item as having the lowest rank in the set.
-        /// </summary>
-        /// <param name="set">The set in which the key is stored.</param>
-        /// <param name="pointerIndex">The index into the pointer set.</param>
-        protected abstract void DemoteKey(int set, int pointerIndex);
-
     }
 }

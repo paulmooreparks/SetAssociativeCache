@@ -41,20 +41,20 @@ namespace ParksComputing.SetAssociativeCache {
         /// <param name="set">The set in which the key is stored.</param>
         /// <param name="pointerIndex">The index into the key array.</param>
         protected override void PromoteKey(int set, int pointerIndex) {
-            int newHeadItemKey = pointerArray_[set][pointerIndex].Key;
-            int newHeadItemValue = pointerArray_[set][pointerIndex].Value;
+            int newKey = pointerArray_[set][pointerIndex].Key;
+            long newValue = pointerArray_[set][pointerIndex].Value;
 
             /* Increment the frequency count, checking for overflow. */
             try {
-                newHeadItemValue = checked(newHeadItemValue + 1);
+                newValue = checked(newValue + 1);
             }
             catch (OverflowException) {
                 /* If the item has been in the cache long enough for the counter to wrap around, 
                 it's probably time to evict it. Regardless, we'll just set it back to one. */
-                newHeadItemValue = 1;
+                newValue = 1;
             }
 
-            pointerArray_[set][pointerIndex] = new KeyValuePair<int, int>(newHeadItemKey, newHeadItemValue);
+            pointerArray_[set][pointerIndex] = new KeyValuePair<int, long>(newKey, newValue);
             Array.Sort(pointerArray_[set], 0, ways_, lfuComparer_);
         }
 
@@ -64,21 +64,21 @@ namespace ParksComputing.SetAssociativeCache {
         /// <param name="set">The set in which the key is stored.</param>
         /// <param name="pointerIndex">The index into the key array.</param>
         protected override void DemoteKey(int set, int pointerIndex) {
-            int newTailItemKey = pointerArray_[set][pointerIndex].Key;
-            int newTailItemValue = 0;
-            pointerArray_[set][pointerIndex] = new KeyValuePair<int, int>(newTailItemKey, newTailItemValue);
+            int newKey = pointerArray_[set][pointerIndex].Key;
+            long newValue = 0;
+            pointerArray_[set][pointerIndex] = new KeyValuePair<int, long>(newKey, newValue);
             Array.Sort(pointerArray_[set], 0, ways_, lfuComparer_);
         }
 
         /* Comparer object used to sort items in indexArray in LFU order. */
-        readonly IComparer<KeyValuePair<int, int>> lfuComparer_ = new XfuComparer();
+        readonly IComparer<KeyValuePair<int, long>> lfuComparer_ = new XfuComparer();
 
         /// <summary>
         /// Custom comparer used to sort the items in indexArray in LFU order.
         /// </summary>
-        internal class XfuComparer : Comparer<KeyValuePair<int, int>> {
+        internal class XfuComparer : Comparer<KeyValuePair<int, long>> {
             // Compares by Length, Height, and Width.
-            public override int Compare(KeyValuePair<int, int> x, KeyValuePair<int, int> y) {
+            public override int Compare(KeyValuePair<int, long> x, KeyValuePair<int, long> y) {
                 /* Reverse sort */
                 if (x.Value < y.Value) {
                     return 1;
