@@ -29,11 +29,11 @@ namespace ParksComputing.SetAssociativeCache {
             return ways_ - 1;
         }
 
-        protected override bool TryAddAtIndex(TKey key, TValue value, DateTime tag, int set, int pointerIndex, int valueIndex, Action<TKey, TValue, DateTime, int, int, int> OnKeyExists) {
-            bool result = base.TryAddAtIndex(key, value, tag, set, pointerIndex, valueIndex, OnKeyExists);
+        protected override bool TryAddAtIndex(TKey key, TValue value, DateTime meta, int set, int pointerIndex, int valueIndex, Action<TKey, TValue, DateTime, int, int, int> OnKeyExists) {
+            bool result = base.TryAddAtIndex(key, value, meta, set, pointerIndex, valueIndex, OnKeyExists);
 
             if (!result && IsExpired(set, pointerIndex)) {
-                ReplaceItem(key, value, tag, set, pointerIndex, valueIndex);
+                ReplaceItem(key, value, meta, set, pointerIndex, valueIndex);
                 return true;
             }
 
@@ -61,8 +61,8 @@ namespace ParksComputing.SetAssociativeCache {
             return result;
         }
 
-        protected override void AddItem(TKey key, TValue value, DateTime tag, int set, int pointerIndex, int valueIndex) {
-            base.AddItem(key, value, tag, set, pointerIndex, valueIndex);
+        protected override void AddItem(TKey key, TValue value, DateTime meta, int set, int pointerIndex, int valueIndex) {
+            base.AddItem(key, value, meta, set, pointerIndex, valueIndex);
             int newKey = pointerArray_[set][pointerIndex].Key;
             DateTime expTime = DateTime.UtcNow.AddSeconds(defaultTtl_);
             pointerArray_[set][pointerIndex] = new System.Collections.Generic.KeyValuePair<int, DateTime>(newKey, expTime);

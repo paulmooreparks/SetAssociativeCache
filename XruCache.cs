@@ -14,7 +14,7 @@ namespace ParksComputing.SetAssociativeCache {
     /// element. (Cache items in the value array DO NOT move around, only the elements in the 
     /// pointer array do that.)
     /// </remarks>
-    public abstract class XruCache<TKey, TValue, TTag> : CacheImplBase<TKey, TValue, TTag> {
+    public abstract class XruCache<TKey, TValue, TMeta> : CacheImplBase<TKey, TValue, TMeta> {
         /// <summary>
         /// Create a new <c>XruCache</c> instance.
         /// </summary>
@@ -31,12 +31,12 @@ namespace ParksComputing.SetAssociativeCache {
         protected override void PromoteKey(int set, int pointerIndex) {
             int count = pointerIndex;
             int newKey = pointerArray_[set][pointerIndex].Key;
-            TTag newValue = pointerArray_[set][pointerIndex].Value;
+            TMeta newValue = pointerArray_[set][pointerIndex].Value;
 
             if (count > 0) {
                 /* Move the key to the lowest index in the set. */
                 System.Array.Copy(pointerArray_[set], 0, pointerArray_[set], 1, count);
-                pointerArray_[set][0] = new KeyValuePair<int, TTag>(newKey, newValue);
+                pointerArray_[set][0] = new KeyValuePair<int, TMeta>(newKey, newValue);
             }
         }
 
@@ -49,12 +49,12 @@ namespace ParksComputing.SetAssociativeCache {
             int tailIndex = ways_ - 1;
             int count = ways_ - pointerIndex - 1;
             int newKey = pointerArray_[set][pointerIndex].Key;
-            TTag newValue = pointerArray_[set][pointerIndex].Value;
+            TMeta newValue = pointerArray_[set][pointerIndex].Value;
 
             if (count > 0 && pointerIndex < tailIndex) {
                 /* Move the key to the highest index in the set. */
                 System.Array.Copy(pointerArray_[set], pointerIndex + 1, pointerArray_[set], pointerIndex, count);
-                pointerArray_[set][tailIndex] = new KeyValuePair<int, TTag>(newKey, newValue);
+                pointerArray_[set][tailIndex] = new KeyValuePair<int, TMeta>(newKey, newValue);
             }
         }
     }
