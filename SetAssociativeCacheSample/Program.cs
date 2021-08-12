@@ -322,7 +322,7 @@ namespace SetAssociativeCacheSample {
 
         public static void Run(string[] args) {
             responseCache = new (sets: 1, ways: 3);
-            responseCache.TTL = 10; // 10 seconds is low, but it's just to make a point.
+            responseCache.DefaultTTL = 10; // 10 seconds is low, but it's just to make a point.
             string line;
 
             Console.Write("URL: ");

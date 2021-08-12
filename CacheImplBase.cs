@@ -12,7 +12,7 @@ namespace ParksComputing.SetAssociativeCache {
     /// <remarks>
     /// THIS CLASS IS NOT THREAD SAFE! Thread-safe access is the reponsibility of the client.
     /// </remarks>
-    public abstract class CacheImplBase<TKey, TValue> : ISetAssociativeCache<TKey, TValue>, IReadOnlyDictionary<TKey, TValue> {
+    public abstract class CacheImplBase<TKey, TValue, TTag> : ISetAssociativeCache<TKey, TValue>, IReadOnlyDictionary<TKey, TValue> {
 
         /* By using fields instead of properties, I've found that I can eliminate function 
         alls from the release version of the JITted assembly code, at least on Intel/AMD x64. 
@@ -31,7 +31,7 @@ namespace ParksComputing.SetAssociativeCache {
         specific eviction policy. This array is sorted/rearranged/whatever according to the needs 
         of the cache policy, since it's faster to move integer pairs around, and they're close 
         together in the CPU cache. */
-        protected KeyValuePair<int, long>[][] pointerArray_;
+        protected KeyValuePair<int, TTag>[][] pointerArray_;
 
         /* valueArray_ stores the key/value pairs of the actual cache items. Once an item is placed 
         at an index in this array, it stays there unless it is replaced with a new key/value pair or 
@@ -61,12 +61,12 @@ namespace ParksComputing.SetAssociativeCache {
             ++version_;
             count_ = 0;
 
-            pointerArray_ = new KeyValuePair<int, long>[sets_][];
+            pointerArray_ = new KeyValuePair<int, TTag>[sets_][];
             valueArray_ = new KeyValuePair<TKey, TValue>?[sets_][];
 
             for (int set = 0; set < sets_; set++) {
-                pointerArray_[set] = new KeyValuePair<int, long>[ways_];
-                Array.Fill(pointerArray_[set], new KeyValuePair<int, long>(EMPTY_MARKER, 0));
+                pointerArray_[set] = new KeyValuePair<int, TTag>[ways_];
+                Array.Fill(pointerArray_[set], new KeyValuePair<int, TTag>(EMPTY_MARKER, default(TTag)));
                 valueArray_[set] = new KeyValuePair<TKey, TValue>?[ways_];
             }
 
@@ -89,8 +89,9 @@ namespace ParksComputing.SetAssociativeCache {
             }
 
             set {
-                AddOrUpdate(key, value, (key, value, set, pointerIndex, valueIndex) => {
-                    ReplaceItem(key, value, set, pointerIndex, valueIndex);
+                TTag tag = default(TTag);
+                AddOrUpdate(key, value, tag, (key, value, tag, set, pointerIndex, valueIndex) => {
+                    ReplaceItem(key, value, tag, set, pointerIndex, valueIndex);
                 });
             }
         }
@@ -137,7 +138,21 @@ namespace ParksComputing.SetAssociativeCache {
         /// already exists in the cache.</exception>
         /// <exception cref="System.ArgumentNullException"><paramref name="key"/> is null.</exception>
         public virtual void Add(TKey key, TValue value) {
-            AddOrUpdate(key, value, (key, value, set, pointerIndex, valueIndex) => {
+            Add(key, value, default(TTag));
+        }
+
+        /// <summary>
+        /// Adds an element with the provided <paramref name="key"/> and <paramref name="value"/> 
+        /// to the ParksComputing.ISetAssociativeCache.
+        /// </summary>
+        /// <param name="key">The object to use as the key of the element to add.</param>
+        /// <param name="value">The object to use as the value of the element to add.</param>
+        /// <param name="tag">Additional data to associate with the cache item.</param>
+        /// <exception cref="System.ArgumentException">An element with the same <paramref name="key"/> 
+        /// already exists in the cache.</exception>
+        /// <exception cref="System.ArgumentNullException"><paramref name="key"/> is null.</exception>
+        public virtual void Add(TKey key, TValue value, TTag tag) {
+            AddOrUpdate(key, value, tag, (key, value, tag, set, pointerIndex, valueIndex) => {
                 throw new ArgumentException($"Item with key already exists. Key: {key}", nameof(key));
             });
         }
@@ -388,7 +403,7 @@ namespace ParksComputing.SetAssociativeCache {
                 List<TKey> value = new();
 
                 for (int set = 0; set < sets_; ++set) {
-                    foreach (KeyValuePair<int, long> valueIndex in pointerArray_[set]) {
+                    foreach (KeyValuePair<int, TTag> valueIndex in pointerArray_[set]) {
                         if (valueIndex.Key != EMPTY_MARKER) {
                             value.Add(valueArray_[set][valueIndex.Key].Value.Key);
                         }
@@ -414,7 +429,7 @@ namespace ParksComputing.SetAssociativeCache {
                 List<TValue> value = new();
 
                 for (int set = 0; set < sets_; ++set) {
-                    foreach (KeyValuePair<int, long> valueIndex in pointerArray_[set]) {
+                    foreach (KeyValuePair<int, TTag> valueIndex in pointerArray_[set]) {
                         if (valueIndex.Key != EMPTY_MARKER) {
                             value.Add(valueArray_[set][valueIndex.Key].Value.Value);
                         }
@@ -454,7 +469,7 @@ namespace ParksComputing.SetAssociativeCache {
             }
 
             for (int set = 0; set < sets_; ++set) {
-                foreach (KeyValuePair<int, long> keyArrayItem in pointerArray_[set]) {
+                foreach (KeyValuePair<int, TTag> keyArrayItem in pointerArray_[set]) {
                     if (keyArrayItem.Key != EMPTY_MARKER) {
                         array[arrayIndex] = new KeyValuePair<TKey, TValue>(valueArray_[set][keyArrayItem.Key].Value.Key, valueArray_[set][keyArrayItem.Key].Value.Value);
                         ++arrayIndex;
@@ -521,7 +536,7 @@ namespace ParksComputing.SetAssociativeCache {
         /// </remarks>
         /// <exception cref="System.ArgumentNullException">Either <paramref name="key"/> or 
         /// <paramref name="OnKeyExists"/> is null.</exception>
-        protected void AddOrUpdate(TKey key, TValue value, Action<TKey, TValue, int, int, int> OnKeyExists) {
+        protected void AddOrUpdate(TKey key, TValue value, TTag tag, Action<TKey, TValue, TTag, int, int, int> OnKeyExists) {
             if (key == null) {
                 throw new ArgumentNullException(nameof(key));
             }
@@ -532,30 +547,26 @@ namespace ParksComputing.SetAssociativeCache {
 
             /* Get the number of the set that would contain the new key. */
             int set = FindSet(key);
+            int pointerIndex;
+            int valueIndex;
 
-            if (!TryAddToSet(key, value, set, OnKeyExists)) {
-                EvictAndReplaceItem(key, value, set);
-            }
-
-            return;
-        }
-
-        protected virtual bool TryAddToSet(TKey key, TValue value, int set, Action<TKey, TValue, int, int, int> OnKeyExists) {
             /* Loop over the set */
-            for (int pointerIndex = 0; pointerIndex < ways_; ++pointerIndex) {
+            for (pointerIndex = 0; pointerIndex < ways_; ++pointerIndex) {
                 /* Get the index into the value array */
-                int valueIndex = pointerArray_[set][pointerIndex].Key;
+                valueIndex = pointerArray_[set][pointerIndex].Key;
 
-                if (TryAddAtIndex(key, value, set, pointerIndex, valueIndex, OnKeyExists)) {
-                    return true;
+                if (TryAddAtIndex(key, value, tag, set, pointerIndex, valueIndex, OnKeyExists)) {
+                    return;
                 }
             }
 
-            return false;
+            pointerIndex = GetEvictionPointerIndex(set);
+            /* Get the index into the value array for where the evicted cache item is stored. */
+            valueIndex = pointerArray_[set][pointerIndex].Key;
+            ReplaceItem(key, value, tag, set, pointerIndex, valueIndex);
         }
 
-        protected virtual bool TryAddAtIndex(TKey key, TValue value, int set, int pointerIndex, int valueIndex,
-            Action<TKey, TValue, int, int, int> OnKeyExists) {
+        protected virtual bool TryAddAtIndex(TKey key, TValue value, TTag tag, int set, int pointerIndex, int valueIndex, Action<TKey, TValue, TTag, int, int, int> OnKeyExists) {
             /* If the index is a sentinel value for "nothing stored here"... */
             if (valueIndex == EMPTY_MARKER) {
                 /* Find the first empty entry in the value array */
@@ -565,8 +576,7 @@ namespace ParksComputing.SetAssociativeCache {
                     ++valueIndex;
                 }
 
-                AddItem(key, value, set, pointerIndex, valueIndex);
-                UpdateSet(set, pointerIndex);
+                AddItem(key, value, tag, set, pointerIndex, valueIndex);
                 return true;
             }
 
@@ -574,17 +584,15 @@ namespace ParksComputing.SetAssociativeCache {
             if (valueArray_[set][valueIndex].Value.Key.Equals(key)) {
                 valueIndex = pointerArray_[set][pointerIndex].Key;
                 /* Delegate behavior to the onKeyExists delegate. */
-                OnKeyExists(key, value, set, pointerIndex, valueIndex);
+                OnKeyExists(key, value, tag, set, pointerIndex, valueIndex);
                 return true;
             }
-
 
             /* If this item is due for eviction because of policy... */
             if (IsItemEvictable(set, pointerIndex)) {
                 /* ...the new item can go in its place. */
                 valueIndex = pointerArray_[set][pointerIndex].Key;
-                RemoveItem(set, pointerIndex, valueIndex);
-                AddItem(key, value, set, pointerIndex, valueIndex);
+                ReplaceItem(key, value, tag, set, pointerIndex, valueIndex);
                 return true;
             }
 
@@ -600,14 +608,15 @@ namespace ParksComputing.SetAssociativeCache {
         /// <param name="pointerIndex">The index into the pointer set at which to add the element's value index.</param>
         /// <param name="valueIndex">The index into the item set at which the element is stored.</param>
         /// <exception cref="System.ArgumentNullException"><paramref name="key"/> is null.</exception>
-        protected void AddItem(TKey key, TValue value, int set, int pointerIndex, int valueIndex) {
+        protected virtual void AddItem(TKey key, TValue value, TTag tag, int set, int pointerIndex, int valueIndex) {
             if (key == null) {
                 throw new ArgumentNullException(nameof(key));
             }
 
-            long oldValue = pointerArray_[set][pointerIndex].Value;
-            pointerArray_[set][pointerIndex] = new KeyValuePair<int, long>(valueIndex, oldValue);
+            TTag oldValue = pointerArray_[set][pointerIndex].Value;
+            pointerArray_[set][pointerIndex] = new KeyValuePair<int, TTag>(valueIndex, oldValue);
             valueArray_[set][valueIndex] = new KeyValuePair<TKey, TValue>(key, value);
+            PromoteKey(set, pointerIndex);
 
             ++version_;
             ++count_;
@@ -619,35 +628,16 @@ namespace ParksComputing.SetAssociativeCache {
         /// <param name="set">The set in which the item is located.</param>
         /// <param name="pointerIndex">The index into the pointer array.</param>
         /// <param name="valueIndex">The index into the value array.</param>
-        protected void RemoveItem(int set, int pointerIndex, int valueIndex) {
+        protected virtual void RemoveItem(int set, int pointerIndex, int valueIndex) {
             /* Clear the value from the cache */
             valueArray_[set][valueIndex] = null;
 
             /* Mark this location in the pointer array as available. */
-            long oldValue = pointerArray_[set][pointerIndex].Value;
-            pointerArray_[set][pointerIndex] = new KeyValuePair<int, long>(EMPTY_MARKER, oldValue);
+            TTag oldValue = pointerArray_[set][pointerIndex].Value;
+            pointerArray_[set][pointerIndex] = new KeyValuePair<int, TTag>(EMPTY_MARKER, oldValue);
 
             ++version_;
             --count_;
-        }
-
-        /// <summary>
-        /// Evicts an element and replaces it with a new element with the provided <paramref name="key"/> and 
-        /// <paramref name="value"/>. 
-        /// </summary>
-        /// <param name="key">The object to use as the key of the element to add.</param>
-        /// <param name="value">The object to use as the value of the element to add.</param>
-        /// <param name="set">The set in which to add the element.</param>
-        /// <exception cref="System.ArgumentNullException"><paramref name="key"/> is null.</exception>
-        protected virtual void EvictAndReplaceItem(TKey key, TValue value, int set) {
-            if (key == null) {
-                throw new ArgumentNullException(nameof(key));
-            }
-
-            int pointerIndex = GetEvictionPointerIndex(set);
-            /* Get the index into the value array for where the evicted cache item is stored. */
-            int valueIndex = pointerArray_[set][pointerIndex].Key;
-            ReplaceItem(key, value, set, pointerIndex, valueIndex);
         }
 
         /// <summary>
@@ -660,14 +650,13 @@ namespace ParksComputing.SetAssociativeCache {
         /// <param name="pointerIndex">The index into the pointer set at which to add the element's value index.</param>
         /// <param name="valueIndex">The index into the item set at which the element is stored.</param>
         /// <exception cref="System.ArgumentNullException"><paramref name="key"/> is null.</exception>
-        protected virtual void ReplaceItem(TKey key, TValue value, int set, int pointerIndex, int valueIndex) {
+        protected virtual void ReplaceItem(TKey key, TValue value, TTag tag, int set, int pointerIndex, int valueIndex) {
             if (key == null) {
                 throw new ArgumentNullException(nameof(key));
             }
 
             RemoveItem(set, pointerIndex, valueIndex);
-            AddItem(key, value, set, pointerIndex, valueIndex);
-            UpdateSet(set, pointerIndex);
+            AddItem(key, value, tag, set, pointerIndex, valueIndex);
         }
 
         /// <summary>
@@ -737,13 +726,6 @@ namespace ParksComputing.SetAssociativeCache {
         protected abstract int GetEvictionPointerIndex(int set);
 
         /// <summary>
-        /// Update and adjust the pointer array as necessary according to the details of the cache policy.
-        /// </summary>
-        /// <param name="set">Which set to update.</param>
-        /// <param name="pointerIndex">The index into the pointer set.</param>
-        protected abstract void UpdateSet(int set, int pointerIndex);
-
-        /// <summary>
         /// Mark an item as having the highest rank in the set.
         /// </summary>
         /// <param name="set">The set in which the key is stored.</param>
@@ -763,7 +745,7 @@ namespace ParksComputing.SetAssociativeCache {
         /// </summary>
         [Serializable]
         private sealed class CacheEnumerator : IEnumerator<KeyValuePair<TKey, TValue>> {
-            readonly CacheImplBase<TKey, TValue> cache_;
+            readonly CacheImplBase<TKey, TValue, TTag> cache_;
             readonly int version_;
             readonly int count_;
             int set_;
@@ -771,7 +753,7 @@ namespace ParksComputing.SetAssociativeCache {
             int index_;
             KeyValuePair<TKey, TValue> current_;
 
-            public CacheEnumerator(CacheImplBase<TKey, TValue> cache) {
+            public CacheEnumerator(CacheImplBase<TKey, TValue, TTag> cache) {
                 this.cache_ = cache;
                 this.version_ = cache.version_;
                 this.count_ = cache.Count;

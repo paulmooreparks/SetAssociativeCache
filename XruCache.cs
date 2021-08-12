@@ -14,22 +14,13 @@ namespace ParksComputing.SetAssociativeCache {
     /// element. (Cache items in the value array DO NOT move around, only the elements in the 
     /// pointer array do that.)
     /// </remarks>
-    public abstract class XruCache<TKey, TValue> : CacheImplBase<TKey, TValue> {
+    public abstract class XruCache<TKey, TValue, TTag> : CacheImplBase<TKey, TValue, TTag> {
         /// <summary>
         /// Create a new <c>XruCache</c> instance.
         /// </summary>
         /// <param name="sets">The number of sets into which the cache is divided.</param>
         /// <param name="ways">The number of storage slots in each set.</param>
         public XruCache(int sets, int ways) : base(sets, ways) {
-        }
-
-        /// <summary>
-        /// Update and adjust the pointer array as necessary according to the details of the cache policy.
-        /// </summary>
-        /// <param name="set">Which set to update.</param>
-        /// <param name="pointerIndex">The index into the pointer set.</param>
-        override protected void UpdateSet(int set, int pointerIndex) {
-            PromoteKey(set, pointerIndex);
         }
 
         /// <summary>
@@ -40,12 +31,12 @@ namespace ParksComputing.SetAssociativeCache {
         protected override void PromoteKey(int set, int pointerIndex) {
             int count = pointerIndex;
             int newKey = pointerArray_[set][pointerIndex].Key;
-            long newValue = pointerArray_[set][pointerIndex].Value;
+            TTag newValue = pointerArray_[set][pointerIndex].Value;
 
             if (count > 0) {
                 /* Move the key to the lowest index in the set. */
                 System.Array.Copy(pointerArray_[set], 0, pointerArray_[set], 1, count);
-                pointerArray_[set][0] = new KeyValuePair<int, long>(newKey, newValue);
+                pointerArray_[set][0] = new KeyValuePair<int, TTag>(newKey, newValue);
             }
         }
 
@@ -58,12 +49,12 @@ namespace ParksComputing.SetAssociativeCache {
             int tailIndex = ways_ - 1;
             int count = ways_ - pointerIndex - 1;
             int newKey = pointerArray_[set][pointerIndex].Key;
-            long newValue = pointerArray_[set][pointerIndex].Value;
+            TTag newValue = pointerArray_[set][pointerIndex].Value;
 
             if (count > 0 && pointerIndex < tailIndex) {
                 /* Move the key to the highest index in the set. */
                 System.Array.Copy(pointerArray_[set], pointerIndex + 1, pointerArray_[set], pointerIndex, count);
-                pointerArray_[set][tailIndex] = new KeyValuePair<int, long>(newKey, newValue);
+                pointerArray_[set][tailIndex] = new KeyValuePair<int, TTag>(newKey, newValue);
             }
         }
     }

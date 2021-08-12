@@ -6,7 +6,7 @@ namespace ParksComputing.SetAssociativeCache {
     /// </summary>
     /// <typeparam name="TKey"></typeparam>
     /// <typeparam name="TValue"></typeparam>
-    public class TlruCache<TKey, TValue> : XruCache<TKey, TValue> {
+    public class TlruCache<TKey, TValue> : XruCache<TKey, TValue, DateTime> {
         /// <summary>
         /// Create a new <c>TlruCache</c> instance.
         /// </summary>
@@ -15,11 +15,11 @@ namespace ParksComputing.SetAssociativeCache {
         public TlruCache(int sets, int ways) : base(sets, ways) {
         }
 
-        protected long ttl_ = 300; // in seconds. Just a made-up number for now.
+        protected long defaultTtl_ = 300; // in seconds. Just a made-up number for now.
 
-        public long TTL {
-            get { return ttl_; }
-            set { ttl_ = value; }
+        public long DefaultTTL {
+            get { return defaultTtl_; }
+            set { defaultTtl_ = value; }
         }
 
         /// <summary>
@@ -29,21 +29,11 @@ namespace ParksComputing.SetAssociativeCache {
             return ways_ - 1;
         }
 
-        protected virtual bool IsExpired(int set, int pointerIndex) {
-            var binTime = pointerArray_[set][pointerIndex].Value;
-            var timeStamp = DateTime.FromBinary(binTime);
-            var expTime = timeStamp.AddSeconds(ttl_);
-            var now = DateTime.UtcNow;
-
-            /* If expiration time is in the past... */
-            return (expTime < now);
-        }
-
-        protected override bool TryAddAtIndex(TKey key, TValue value, int set, int pointerIndex, int valueIndex, Action<TKey, TValue, int, int, int> OnKeyExists) {
-            bool result = base.TryAddAtIndex(key, value, set, pointerIndex, valueIndex, OnKeyExists);
+        protected override bool TryAddAtIndex(TKey key, TValue value, DateTime tag, int set, int pointerIndex, int valueIndex, Action<TKey, TValue, DateTime, int, int, int> OnKeyExists) {
+            bool result = base.TryAddAtIndex(key, value, tag, set, pointerIndex, valueIndex, OnKeyExists);
 
             if (!result && IsExpired(set, pointerIndex)) {
-                ReplaceItem(key, value, set, pointerIndex, valueIndex);
+                ReplaceItem(key, value, tag, set, pointerIndex, valueIndex);
                 return true;
             }
 
@@ -71,11 +61,40 @@ namespace ParksComputing.SetAssociativeCache {
             return result;
         }
 
-        protected override void UpdateSet(int set, int pointerIndex) {
+        protected override void AddItem(TKey key, TValue value, DateTime tag, int set, int pointerIndex, int valueIndex) {
+            base.AddItem(key, value, tag, set, pointerIndex, valueIndex);
             int newKey = pointerArray_[set][pointerIndex].Key;
-            long newValue = DateTime.UtcNow.ToBinary();
-            pointerArray_[set][pointerIndex] = new System.Collections.Generic.KeyValuePair<int, long>(newKey, newValue);
-            base.UpdateSet(set, pointerIndex);
+            DateTime expTime = DateTime.UtcNow.AddSeconds(defaultTtl_);
+            pointerArray_[set][pointerIndex] = new System.Collections.Generic.KeyValuePair<int, DateTime>(newKey, expTime);
+        }
+
+        protected virtual bool IsExpired(int set, int pointerIndex) {
+            var expTime = pointerArray_[set][pointerIndex].Value;
+
+            /* If expiration time is in the past... */
+            return DateTime.Compare(expTime, DateTime.UtcNow) < 0;
+        }
+
+        public bool SetTimeout(TKey key, long ttlSeconds) {
+            if (key == null) {
+                throw new ArgumentNullException(nameof(key));
+            }
+
+            int set = FindSet(key);
+
+            for (int pointerIndex = 0; pointerIndex < ways_; ++pointerIndex) {
+                int valueIndex = pointerArray_[set][pointerIndex].Key;
+
+                /* If the key is found in the value array... */
+                if (valueIndex != EMPTY_MARKER && valueArray_[set][valueIndex].Value.Key.Equals(key)) {
+                    int newKey = pointerArray_[set][pointerIndex].Key;
+                    DateTime expTime = DateTime.UtcNow.AddSeconds(ttlSeconds);
+                    pointerArray_[set][pointerIndex] = new System.Collections.Generic.KeyValuePair<int, DateTime>(newKey, expTime);
+                    return true;
+                }
+            };
+
+            return false;
         }
     }
 }

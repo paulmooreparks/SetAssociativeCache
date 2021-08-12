@@ -4,7 +4,7 @@
     /// </summary>
     /// <typeparam name="TKey"></typeparam>
     /// <typeparam name="TValue"></typeparam>
-    public class MruCache<TKey, TValue> : XruCache<TKey, TValue> {
+    public class MruCache<TKey, TValue> : XruCache<TKey, TValue, int> {
         /// <summary>
         /// Create a new <c>MruCache</c> instance.
         /// </summary>
