@@ -44,7 +44,16 @@ namespace ParksComputing.SetAssociativeCache {
                 newValue = 1;
             }
 
-            pointerArray_[set][pointerIndex] = new KeyValuePair<int, int>(newKey, newValue);
+
+            if (newValue == 1 && pointerIndex > 0) {
+                /* Move the key to the lowest index in the set. */
+                System.Array.Copy(pointerArray_[set], 0, pointerArray_[set], 1, pointerIndex);
+                pointerArray_[set][0] = new KeyValuePair<int, int>(newKey, newValue);
+            }
+            else {
+                pointerArray_[set][pointerIndex] = new KeyValuePair<int, int>(newKey, newValue);
+            }
+
             Array.Sort(pointerArray_[set], 0, ways_, lfuComparer_);
         }
 

@@ -79,7 +79,7 @@ namespace ParksComputing.SetAssociativeCache {
         /// <returns>The element with the specified key.</returns>
         /// <exception cref="System.ArgumentNullException"><paramref name="key"/> is null.</exception>
         /// <exception cref="System.Collections.Generic.KeyNotFoundException">The property is retrieved and key is not found.</exception>
-        public TValue this[TKey key] {
+        public virtual TValue this[TKey key] {
             get {
                 if (TryGetValue(key, out TValue value)) {
                     return value;
@@ -92,6 +92,7 @@ namespace ParksComputing.SetAssociativeCache {
                 TMeta meta = default(TMeta);
                 AddOrUpdate(key, value, meta, (key, value, meta, set, pointerIndex, valueIndex) => {
                     ReplaceItem(key, value, meta, set, pointerIndex, valueIndex);
+                    PromoteKey(set, pointerIndex);
                 });
             }
         }
@@ -564,6 +565,7 @@ namespace ParksComputing.SetAssociativeCache {
             /* Get the index into the value array for where the evicted cache item is stored. */
             valueIndex = pointerArray_[set][pointerIndex].Key;
             ReplaceItem(key, value, meta, set, pointerIndex, valueIndex);
+            PromoteKey(set, pointerIndex);
         }
 
         protected virtual bool TryAddAtIndex(TKey key, TValue value, TMeta meta, int set, int pointerIndex, int valueIndex, Action<TKey, TValue, TMeta, int, int, int> OnKeyExists) {
@@ -577,6 +579,7 @@ namespace ParksComputing.SetAssociativeCache {
                 }
 
                 AddItem(key, value, meta, set, pointerIndex, valueIndex);
+                PromoteKey(set, pointerIndex);
                 return true;
             }
 
@@ -592,7 +595,8 @@ namespace ParksComputing.SetAssociativeCache {
             if (IsItemEvictable(set, pointerIndex)) {
                 /* ...the new item can go in its place. */
                 valueIndex = pointerArray_[set][pointerIndex].Key;
-                ReplaceItem(key, value, meta, set, pointerIndex, valueIndex);
+                AddItem(key, value, meta, set, pointerIndex, valueIndex);
+                PromoteKey(set, pointerIndex);
                 return true;
             }
 
@@ -613,10 +617,8 @@ namespace ParksComputing.SetAssociativeCache {
                 throw new ArgumentNullException(nameof(key));
             }
 
-            TMeta oldValue = pointerArray_[set][pointerIndex].Value;
-            pointerArray_[set][pointerIndex] = new KeyValuePair<int, TMeta>(valueIndex, oldValue);
+            pointerArray_[set][pointerIndex] = new KeyValuePair<int, TMeta>(valueIndex, meta);
             valueArray_[set][valueIndex] = new KeyValuePair<TKey, TValue>(key, value);
-            PromoteKey(set, pointerIndex);
 
             ++version_;
             ++count_;
@@ -655,7 +657,7 @@ namespace ParksComputing.SetAssociativeCache {
                 throw new ArgumentNullException(nameof(key));
             }
 
-            RemoveItem(set, pointerIndex, valueIndex);
+            --count_;
             AddItem(key, value, meta, set, pointerIndex, valueIndex);
         }
 

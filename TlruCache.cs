@@ -34,6 +34,7 @@ namespace ParksComputing.SetAssociativeCache {
 
             if (!result && IsExpired(set, pointerIndex)) {
                 ReplaceItem(key, value, meta, set, pointerIndex, valueIndex);
+                PromoteKey(set, pointerIndex);
                 return true;
             }
 
@@ -61,11 +62,20 @@ namespace ParksComputing.SetAssociativeCache {
             return result;
         }
 
-        protected override void AddItem(TKey key, TValue value, DateTime meta, int set, int pointerIndex, int valueIndex) {
-            base.AddItem(key, value, meta, set, pointerIndex, valueIndex);
-            int newKey = pointerArray_[set][pointerIndex].Key;
+        public override TValue this[TKey key] { 
+            get => base[key];
+            set {
+                DateTime expTime = DateTime.UtcNow.AddSeconds(defaultTtl_);
+                AddOrUpdate(key, value, expTime, (key, value, meta, set, pointerIndex, valueIndex) => {
+                    ReplaceItem(key, value, expTime, set, pointerIndex, valueIndex);
+                    PromoteKey(set, pointerIndex);
+                });
+            }
+        }
+
+        public override void Add(TKey key, TValue value) {
             DateTime expTime = DateTime.UtcNow.AddSeconds(defaultTtl_);
-            pointerArray_[set][pointerIndex] = new System.Collections.Generic.KeyValuePair<int, DateTime>(newKey, expTime);
+            base.Add(key, value, expTime);
         }
 
         protected virtual bool IsExpired(int set, int pointerIndex) {

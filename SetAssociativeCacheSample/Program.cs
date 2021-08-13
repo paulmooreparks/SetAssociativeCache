@@ -11,7 +11,8 @@ using ParksComputing.SetAssociativeCache;
 namespace SetAssociativeCacheSample {
     public class Program {
         static void Main(string[] args) {
-            WebSample.Run(args);
+            GreenEggsAndHam.LfuTest3();
+            // WebSample.Run(args);
             // CelebCouples.ArticlePart1Sample();
             // CelebCouples.ReadmeSample();
         }
@@ -75,23 +76,23 @@ namespace SetAssociativeCacheSample {
                 KeyValuePair<int, string>[] pairArray = new KeyValuePair<int, string>[cache.Capacity];
                 cache.CopyTo(pairArray, 0);
 
-                Assert.IsTrue(pairArray[0].Key == 9);
-                Assert.IsTrue(pairArray[1].Key == 10);
-                Assert.IsTrue(pairArray[2].Key == 2);
-                Assert.IsTrue(pairArray[3].Key == 6);
-                Assert.IsTrue(pairArray[4].Key == 12);
-                Assert.IsTrue(pairArray[5].Key == 3);
-                Assert.IsTrue(pairArray[6].Key == 11);
-                Assert.IsTrue(pairArray[7].Key == 4);
+                Assert.IsTrue(pairArray[0].Key == 10);
+                Assert.IsTrue(pairArray[1].Key == 9);
+                Assert.IsTrue(pairArray[2].Key == 6);
+                Assert.IsTrue(pairArray[3].Key == 2);
+                Assert.IsTrue(pairArray[4].Key == 7);
+                Assert.IsTrue(pairArray[5].Key == 12);
+                Assert.IsTrue(pairArray[6].Key == 8);
+                Assert.IsTrue(pairArray[7].Key == 11);
 
-                Assert.IsTrue(pairArray[0].Value == "value09");
-                Assert.IsTrue(pairArray[1].Value == "value10");
-                Assert.IsTrue(pairArray[2].Value == "value02");
-                Assert.IsTrue(pairArray[3].Value == "value06");
-                Assert.IsTrue(pairArray[4].Value == "value12");
-                Assert.IsTrue(pairArray[5].Value == "value03");
-                Assert.IsTrue(pairArray[6].Value == "value11");
-                Assert.IsTrue(pairArray[7].Value == "value04");
+                Assert.IsTrue(pairArray[0].Value == "value10");
+                Assert.IsTrue(pairArray[1].Value == "value09");
+                Assert.IsTrue(pairArray[2].Value == "value06");
+                Assert.IsTrue(pairArray[3].Value == "value02");
+                Assert.IsTrue(pairArray[4].Value == "value07");
+                Assert.IsTrue(pairArray[5].Value == "value12");
+                Assert.IsTrue(pairArray[6].Value == "value08");
+                Assert.IsTrue(pairArray[7].Value == "value11");
 
                 Assert.IsTrue(cache.Remove(9));
                 Assert.IsTrue(cache.Remove(10));
@@ -330,13 +331,8 @@ namespace SetAssociativeCacheSample {
             while (!string.IsNullOrEmpty(line = Console.In.ReadLine())) {
                 string url = line.Trim();
                 UriBuilder uri = new UriBuilder(url);
-                DateTime startTime = DateTime.Now;
                 GetRequest(uri.ToString()).Wait();
-                DateTime endTime = DateTime.Now;
-                TimeSpan duration = endTime - startTime;
 
-                Console.WriteLine();
-                Console.WriteLine($"Retrieval time: {duration.ToString("c")}");
                 Console.WriteLine();
                 Console.Write("URL: ");
             }
@@ -344,6 +340,8 @@ namespace SetAssociativeCacheSample {
 
         static async Task GetRequest(string url) {
             try {
+                DateTime startTime = DateTime.Now;
+
                 if (!responseCache.TryGetValue(url, out HttpResponseMessage response)) {
                     // HttpResponseMessage response = await client.SendAsync(new HttpRequestMessage(HttpMethod.Head, url));
                     response = await client.GetAsync(url);
@@ -353,8 +351,13 @@ namespace SetAssociativeCacheSample {
 
                 string headers = response.Headers.ToString();
                 string responseContent = await response.Content.ReadAsStringAsync();
+                DateTime endTime = DateTime.Now;
+                TimeSpan duration = endTime - startTime;
+
                 Console.WriteLine(headers);
                 Console.WriteLine(responseContent);
+                Console.WriteLine();
+                Console.WriteLine($"Retrieval time: {duration.ToString("c")}");
             }
             catch (HttpRequestException e) {
                 Console.WriteLine("Message :{0} ", e.Message);
