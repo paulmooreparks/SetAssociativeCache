@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Linq;
 using System.Net.Http;
 using System.Reflection.PortableExecutable;
 using System.Threading.Tasks;
@@ -11,9 +12,66 @@ using ParksComputing.SetAssociativeCache;
 namespace SetAssociativeCacheSample {
     public class Program {
         static void Main(string[] args) {
-            WebSample.Run(args);
+            // WebSample.Run(args);
+            PerfTest.Run(args);
             // CelebCouples.ArticlePart1Sample();
             // CelebCouples.ReadmeSample();
+        }
+
+        public class PerfTest {
+            public static void Run(string[] args) {
+                InitRandomStringGen();
+
+                // LruCache<int, int> cache = new (sets: 1, ways: 500);
+                LruCache<string, string> cache = new (sets: 1, ways: 500);
+                int genCount = 127718;
+
+                DateTime startTime = DateTime.Now;
+                TimeSpan randGenTime = TimeSpan.Zero;
+
+                while (genCount-- > 0) {
+                    DateTime randGenStartTime = DateTime.Now;
+                    // int rand = GenerateRandomInt();
+                    string rand = GenerateRandomAlphanumericString();
+                    randGenTime += DateTime.Now - randGenStartTime;
+                    cache.Add(rand, rand);
+                }
+
+                TimeSpan duration = (DateTime.Now - startTime) - randGenTime;
+
+                Console.WriteLine($"Run time: {duration.ToString("c")}");
+                Console.WriteLine($"String gen time: {randGenTime.ToString("c")}");
+            }
+
+            /// <summary>
+            /// Generates a random alphanumeric string.
+            /// </summary>
+            /// <param name="length">The desired length of the string</param>
+            /// <returns>The string which has been generated</returns>
+            /// <remarks>
+            /// Credit: https://jonathancrozier.com/blog/how-to-generate-a-random-string-with-c-sharp
+            /// </remarks>
+            public static string GenerateRandomAlphanumericString(int length = 50) {
+                const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()-={}[]|\\,<.>/?`~";
+                string randomString = new string(Enumerable.Repeat(chars, length).Select(s => s[randGen.Next(s.Length)]).ToArray());
+                return randomString;
+            }
+
+            public static void InitRandomStringGen() {
+                stringGenSet = new();
+            }
+
+            public static void InitRandomIntGen() {
+                intGenSet = new();
+            }
+
+            public static int GenerateRandomInt() {
+                return randGen.Next(int.MaxValue);
+            }
+
+            static HashSet<string> stringGenSet;
+            static HashSet<int> intGenSet;
+            static Random randGen = new Random();
         }
 
         public class GreenEggsAndHam {

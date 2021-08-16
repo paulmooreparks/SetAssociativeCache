@@ -619,7 +619,7 @@ namespace ParksComputing.SetAssociativeCache {
                 /* Find the first empty entry in the value array */
                 valueIndex = 0;
 
-                while (valueIndex < ways_ && valueArray_[set][valueIndex] != null) {
+                while (valueArray_[set][valueIndex] != null) {
                     ++valueIndex;
                 }
 
@@ -630,7 +630,6 @@ namespace ParksComputing.SetAssociativeCache {
 
             /* If the new key is equal to the key at the current position... */
             if (valueArray_[set][valueIndex].Value.Key.Equals(key)) {
-                valueIndex = pointerArray_[set][pointerIndex].Key;
                 /* Delegate behavior to the onKeyExists delegate. */
                 OnKeyExists(key, value, meta, set, pointerIndex, valueIndex);
                 return true;
@@ -639,7 +638,6 @@ namespace ParksComputing.SetAssociativeCache {
             /* If this item is due for eviction because of policy... */
             if (IsItemEvictable(set, pointerIndex)) {
                 /* ...the new item can go in its place. */
-                valueIndex = pointerArray_[set][pointerIndex].Key;
                 AddItem(key, value, meta, set, pointerIndex, valueIndex);
                 PromoteKey(set, pointerIndex);
                 return true;
@@ -672,12 +670,11 @@ namespace ParksComputing.SetAssociativeCache {
         /// <param name="pointerIndex">The index into the pointer array.</param>
         /// <param name="valueIndex">The index into the value array.</param>
         protected virtual void RemoveItem(int set, int pointerIndex, int valueIndex) {
+            /* Mark this location in the pointer array as available. */
+            pointerArray_[set][pointerIndex] = new KeyValuePair<int, TMeta>(EMPTY_MARKER, default(TMeta));
+
             /* Clear the value from the cache */
             valueArray_[set][valueIndex] = null;
-
-            /* Mark this location in the pointer array as available. */
-            TMeta oldValue = pointerArray_[set][pointerIndex].Value;
-            pointerArray_[set][pointerIndex] = new KeyValuePair<int, TMeta>(EMPTY_MARKER, oldValue);
 
             ++version_;
             --count_;
