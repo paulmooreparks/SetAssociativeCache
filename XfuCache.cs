@@ -16,7 +16,7 @@ namespace ParksComputing.SetAssociativeCache {
     /// lower indices in the pointer array and higher counts are stored at higher indices. (Cache 
     /// items in the value array DO NOT move around, only the elements in the pointer array do that.)
     /// </remarks>
-    public abstract class XfuCache<TKey, TValue> : CacheImplBase<TKey, TValue, int> {
+    public abstract class XfuCache<TKey, TValue> : CacheImplBase<TKey, TValue, uint> {
         /// <summary>
         /// Create a new <c>XfuArrayCache</c> instance.
         /// </summary>
@@ -26,13 +26,24 @@ namespace ParksComputing.SetAssociativeCache {
         }
 
         /// <summary>
+        /// Gets the usage count for element with the specified key.
+        /// </summary>
+        /// <param name="key">The key of the element to get.</param>
+        /// <returns>The number of times the element has been accessed.</returns>
+        /// <exception cref="System.ArgumentNullException"><paramref name="key"/> is null.</exception>
+        /// <exception cref="System.Collections.Generic.KeyNotFoundException">The <paramref name="key"/> is not found.</exception>
+        public uint GetUsageCount(TKey key) {
+            return GetMetaData(key);
+        }
+
+        /// <summary>
         /// Mark an item as having the highest rank in the set.
         /// </summary>
         /// <param name="set">The set in which the key is stored.</param>
         /// <param name="pointerIndex">The index into the key array.</param>
         protected override void PromoteKey(int set, int pointerIndex) {
             int newKey = pointerArray_[set][pointerIndex].Key;
-            int newValue = pointerArray_[set][pointerIndex].Value;
+            uint newValue = pointerArray_[set][pointerIndex].Value;
 
             /* Increment the frequency count, checking for overflow. */
             try {
@@ -44,14 +55,13 @@ namespace ParksComputing.SetAssociativeCache {
                 newValue = 1;
             }
 
-
             if (newValue == 1 && pointerIndex > 0) {
                 /* Move the key to the lowest index in the set. */
                 System.Array.Copy(pointerArray_[set], 0, pointerArray_[set], 1, pointerIndex);
-                pointerArray_[set][0] = new KeyValuePair<int, int>(newKey, newValue);
+                pointerArray_[set][0] = new KeyValuePair<int, uint>(newKey, newValue);
             }
             else {
-                pointerArray_[set][pointerIndex] = new KeyValuePair<int, int>(newKey, newValue);
+                pointerArray_[set][pointerIndex] = new KeyValuePair<int, uint>(newKey, newValue);
             }
 
             Array.Sort(pointerArray_[set], 0, ways_, lfuComparer_);
@@ -64,20 +74,20 @@ namespace ParksComputing.SetAssociativeCache {
         /// <param name="pointerIndex">The index into the key array.</param>
         protected override void DemoteKey(int set, int pointerIndex) {
             int newKey = pointerArray_[set][pointerIndex].Key;
-            int newValue = 0;
-            pointerArray_[set][pointerIndex] = new KeyValuePair<int, int>(newKey, newValue);
+            uint newValue = 0;
+            pointerArray_[set][pointerIndex] = new KeyValuePair<int, uint>(newKey, newValue);
             Array.Sort(pointerArray_[set], 0, ways_, lfuComparer_);
         }
 
         /* Comparer object used to sort items in indexArray in LFU order. */
-        readonly IComparer<KeyValuePair<int, int>> lfuComparer_ = new XfuComparer();
+        readonly IComparer<KeyValuePair<int, uint>> lfuComparer_ = new XfuComparer();
 
         /// <summary>
         /// Custom comparer used to sort the items in indexArray in LFU order.
         /// </summary>
-        internal class XfuComparer : Comparer<KeyValuePair<int, int>> {
+        internal class XfuComparer : Comparer<KeyValuePair<int, uint>> {
             // Compares by Length, Height, and Width.
-            public override int Compare(KeyValuePair<int, int> x, KeyValuePair<int, int> y) {
+            public override int Compare(KeyValuePair<int, uint> x, KeyValuePair<int, uint> y) {
                 /* Reverse sort */
                 if (x.Value < y.Value) {
                     return 1;

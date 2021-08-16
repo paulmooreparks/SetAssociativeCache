@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace ParksComputing.SetAssociativeCache {
     /// <summary>
@@ -15,11 +16,31 @@ namespace ParksComputing.SetAssociativeCache {
         public TlruCache(int sets, int ways) : base(sets, ways) {
         }
 
-        protected long defaultTtl_ = 300; // in seconds. Just a made-up number for now.
+        protected long defaultTtu_ = 300; // in seconds. Just a made-up number for now.
 
-        public long DefaultTTL {
-            get { return defaultTtl_; }
-            set { defaultTtl_ = value; }
+        public long DefaultTTU {
+            get { return defaultTtu_; }
+            set { defaultTtu_ = value; }
+        }
+
+        /// <summary>
+        /// Gets the expiration time for element with the specified key.
+        /// </summary>
+        /// <param name="key">The key of the element to get.</param>
+        /// <returns>The expiration date and time for the requested element.</returns>
+        /// <exception cref="System.ArgumentNullException"><paramref name="key"/> is null.</exception>
+        /// <exception cref="System.Collections.Generic.KeyNotFoundException">The <paramref name="key"/> is not found.</exception>
+        public DateTime GetExpirationTime(TKey key) {
+            return GetMetaData(key);
+        }
+
+        public void SetExpirationTime(TKey key, DateTime expTime) {
+            SetMetaData(key, expTime);
+        }
+
+        public void SetTimeout(TKey key, long ttuSeconds) {
+            DateTime expTime = DateTime.UtcNow.AddSeconds(ttuSeconds);
+            SetExpirationTime(key, expTime);
         }
 
         /// <summary>
@@ -65,7 +86,7 @@ namespace ParksComputing.SetAssociativeCache {
         public override TValue this[TKey key] { 
             get => base[key];
             set {
-                DateTime expTime = DateTime.UtcNow.AddSeconds(defaultTtl_);
+                DateTime expTime = DateTime.UtcNow.AddSeconds(defaultTtu_);
                 AddOrUpdate(key, value, expTime, (key, value, meta, set, pointerIndex, valueIndex) => {
                     ReplaceItem(key, value, expTime, set, pointerIndex, valueIndex);
                     PromoteKey(set, pointerIndex);
@@ -74,7 +95,7 @@ namespace ParksComputing.SetAssociativeCache {
         }
 
         public override void Add(TKey key, TValue value) {
-            DateTime expTime = DateTime.UtcNow.AddSeconds(defaultTtl_);
+            DateTime expTime = DateTime.UtcNow.AddSeconds(defaultTtu_);
             base.Add(key, value, expTime);
         }
 
@@ -83,28 +104,6 @@ namespace ParksComputing.SetAssociativeCache {
 
             /* If expiration time is in the past... */
             return DateTime.Compare(expTime, DateTime.UtcNow) < 0;
-        }
-
-        public bool SetTimeout(TKey key, long ttlSeconds) {
-            if (key == null) {
-                throw new ArgumentNullException(nameof(key));
-            }
-
-            int set = FindSet(key);
-
-            for (int pointerIndex = 0; pointerIndex < ways_; ++pointerIndex) {
-                int valueIndex = pointerArray_[set][pointerIndex].Key;
-
-                /* If the key is found in the value array... */
-                if (valueIndex != EMPTY_MARKER && valueArray_[set][valueIndex].Value.Key.Equals(key)) {
-                    int newKey = pointerArray_[set][pointerIndex].Key;
-                    DateTime expTime = DateTime.UtcNow.AddSeconds(ttlSeconds);
-                    pointerArray_[set][pointerIndex] = new System.Collections.Generic.KeyValuePair<int, DateTime>(newKey, expTime);
-                    return true;
-                }
-            };
-
-            return false;
         }
     }
 }

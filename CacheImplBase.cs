@@ -506,6 +506,59 @@ namespace ParksComputing.SetAssociativeCache {
         public bool IsReadOnly => false;
 
         /// <summary>
+        /// Gets the metadata for element with the specified key.
+        /// </summary>
+        /// <param name="key">The key of the element to get.</param>
+        /// <returns>The metadata for the requested element.</returns>
+        /// <exception cref="System.ArgumentNullException"><paramref name="key"/> is null.</exception>
+        /// <exception cref="System.Collections.Generic.KeyNotFoundException">The <paramref name="key"/> is not found.</exception>
+        public TMeta GetMetaData(TKey key) {
+            if (key == null) {
+                throw new ArgumentNullException(nameof(key));
+            }
+
+            int set = FindSet(key);
+
+            for (int pointerIndex = 0; pointerIndex < ways_; ++pointerIndex) {
+                int valueIndex = pointerArray_[set][pointerIndex].Key;
+
+                /* If the key is found in the value array... */
+                if (valueIndex != EMPTY_MARKER &&
+                    valueArray_[set][valueIndex].Value.Key.Equals(key)) {
+                    return pointerArray_[set][pointerIndex].Value;
+                }
+            };
+
+            throw new KeyNotFoundException(string.Format("Key '{0}' not found in cache", key));
+        }
+
+        /// <summary>
+        /// Sets the metadata for element with the specified key.
+        /// </summary>
+        /// <param name="key">The key of the element to get.</param>
+        /// <exception cref="System.ArgumentNullException"><paramref name="key"/> is null.</exception>
+        /// <exception cref="System.Collections.Generic.KeyNotFoundException">The <paramref name="key"/> is not found.</exception>
+        public void SetMetaData(TKey key, TMeta meta) {
+            if (key == null) {
+                throw new ArgumentNullException(nameof(key));
+            }
+
+            int set = FindSet(key);
+
+            for (int pointerIndex = 0; pointerIndex < ways_; ++pointerIndex) {
+                int valueIndex = pointerArray_[set][pointerIndex].Key;
+
+                /* If the key is found in the value array... */
+                if (valueIndex != EMPTY_MARKER &&
+                    valueArray_[set][valueIndex].Value.Key.Equals(key)) {
+                    pointerArray_[set][pointerIndex] = new KeyValuePair<int, TMeta>(valueIndex, meta);
+                }
+            };
+
+            throw new KeyNotFoundException(string.Format("Key '{0}' not found in cache", key));
+        }
+
+        /// <summary>
         /// Determines if an item that has been retrieved from the cache is now invalid (expired, 
         /// etc.). If so, removes it from the cache and returns <c>true</c> to indicate that the 
         /// item has been filtered.
@@ -538,14 +591,6 @@ namespace ParksComputing.SetAssociativeCache {
         /// <exception cref="System.ArgumentNullException">Either <paramref name="key"/> or 
         /// <paramref name="OnKeyExists"/> is null.</exception>
         protected void AddOrUpdate(TKey key, TValue value, TMeta meta, Action<TKey, TValue, TMeta, int, int, int> OnKeyExists) {
-            if (key == null) {
-                throw new ArgumentNullException(nameof(key));
-            }
-
-            if (OnKeyExists == null) {
-                throw new ArgumentNullException(nameof(OnKeyExists));
-            }
-
             /* Get the number of the set that would contain the new key. */
             int set = FindSet(key);
             int pointerIndex;
@@ -613,10 +658,6 @@ namespace ParksComputing.SetAssociativeCache {
         /// <param name="valueIndex">The index into the item set at which the element is stored.</param>
         /// <exception cref="System.ArgumentNullException"><paramref name="key"/> is null.</exception>
         protected virtual void AddItem(TKey key, TValue value, TMeta meta, int set, int pointerIndex, int valueIndex) {
-            if (key == null) {
-                throw new ArgumentNullException(nameof(key));
-            }
-
             pointerArray_[set][pointerIndex] = new KeyValuePair<int, TMeta>(valueIndex, meta);
             valueArray_[set][valueIndex] = new KeyValuePair<TKey, TValue>(key, value);
 
@@ -653,10 +694,6 @@ namespace ParksComputing.SetAssociativeCache {
         /// <param name="valueIndex">The index into the item set at which the element is stored.</param>
         /// <exception cref="System.ArgumentNullException"><paramref name="key"/> is null.</exception>
         protected virtual void ReplaceItem(TKey key, TValue value, TMeta meta, int set, int pointerIndex, int valueIndex) {
-            if (key == null) {
-                throw new ArgumentNullException(nameof(key));
-            }
-
             --count_;
             AddItem(key, value, meta, set, pointerIndex, valueIndex);
         }
@@ -668,10 +705,6 @@ namespace ParksComputing.SetAssociativeCache {
         /// <exception cref="System.ArgumentNullException"><paramref name="key"/> is null.</exception>
         /// <returns>The set in which the <paramref name="key"/> should be kept.</returns>
         protected int FindSet(TKey key) {
-            if (key == null) {
-                throw new ArgumentNullException(nameof(key));
-            }
-
             ulong keyHash = key.GetHashValue();
             return (int)(keyHash % (ulong)sets_);
         }

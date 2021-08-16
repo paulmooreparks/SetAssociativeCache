@@ -11,8 +11,7 @@ using ParksComputing.SetAssociativeCache;
 namespace SetAssociativeCacheSample {
     public class Program {
         static void Main(string[] args) {
-            GreenEggsAndHam.LfuTest3();
-            // WebSample.Run(args);
+            WebSample.Run(args);
             // CelebCouples.ArticlePart1Sample();
             // CelebCouples.ReadmeSample();
         }
@@ -323,7 +322,7 @@ namespace SetAssociativeCacheSample {
 
         public static void Run(string[] args) {
             responseCache = new (sets: 1, ways: 3);
-            responseCache.DefaultTTL = 10; // 10 seconds is low, but it's just to make a point.
+            responseCache.DefaultTTU = 10; // 10 seconds is low, but it's just to make a point.
             string line;
 
             Console.Write("URL: ");
