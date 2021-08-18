@@ -23,12 +23,14 @@ namespace SetAssociativeCacheSample {
             static TlruCache<string, HttpResponseMessage> responseCache;
 
             static void Help() {
-                Console.WriteLine("Web request cache tester");
+                Console.WriteLine("Web request cache tester. NOTE that real caching is quite a bit");
+                Console.WriteLine("more complicated than this. This is just a simple example of how");
+                Console.WriteLine("to use the TLRU cache implementation.");
                 Console.WriteLine();
                 Console.WriteLine("get <url>                Get response from URL");
-                Console.WriteLine("timeout <seconds>        Set default timeout for new requests");
-                Console.WriteLine("update <url> <seconds>   Set timeout for cached request");
-                Console.WriteLine("dump                     List all cached requests");
+                Console.WriteLine("timeout <seconds>        Set default timeout for new responses");
+                Console.WriteLine("update <url> <seconds>   Set timeout for cached response");
+                Console.WriteLine("dump                     List all cached responses");
                 Console.WriteLine("now                      Print the current time");
                 Console.WriteLine("quit                     Quit");
                 Console.WriteLine("help                     Print help");
