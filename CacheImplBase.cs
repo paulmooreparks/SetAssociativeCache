@@ -404,9 +404,13 @@ namespace ParksComputing.SetAssociativeCache {
                 List<TKey> value = new();
 
                 for (int set = 0; set < sets_; ++set) {
-                    foreach (KeyValuePair<int, TMeta> valueIndex in pointerArray_[set]) {
-                        if (valueIndex.Key != EMPTY_MARKER) {
-                            value.Add(valueArray_[set][valueIndex.Key].Value.Key);
+                    for (int pointerIndex = 0; pointerIndex < ways_; ++pointerIndex) {
+                        if (!IsItemEvictable(set, pointerIndex)) {
+                            int valueIndex = pointerArray_[set][pointerIndex].Key;
+                            
+                            if (valueIndex != EMPTY_MARKER) {
+                                value.Add(valueArray_[set][valueIndex].Value.Key);
+                            }
                         }
                     }
                 }
@@ -430,9 +434,13 @@ namespace ParksComputing.SetAssociativeCache {
                 List<TValue> value = new();
 
                 for (int set = 0; set < sets_; ++set) {
-                    foreach (KeyValuePair<int, TMeta> valueIndex in pointerArray_[set]) {
-                        if (valueIndex.Key != EMPTY_MARKER) {
-                            value.Add(valueArray_[set][valueIndex.Key].Value.Value);
+                    for (int pointerIndex = 0; pointerIndex < ways_; ++pointerIndex) {
+                        if (!IsItemEvictable(set, pointerIndex)) {
+                            int valueIndex = pointerArray_[set][pointerIndex].Key;
+
+                            if (valueIndex != EMPTY_MARKER) {
+                                value.Add(valueArray_[set][valueIndex].Value.Value);
+                            }
                         }
                     }
                 }
@@ -470,10 +478,14 @@ namespace ParksComputing.SetAssociativeCache {
             }
 
             for (int set = 0; set < sets_; ++set) {
-                foreach (KeyValuePair<int, TMeta> keyArrayItem in pointerArray_[set]) {
-                    if (keyArrayItem.Key != EMPTY_MARKER) {
-                        array[arrayIndex] = new KeyValuePair<TKey, TValue>(valueArray_[set][keyArrayItem.Key].Value.Key, valueArray_[set][keyArrayItem.Key].Value.Value);
-                        ++arrayIndex;
+                for (int pointerIndex = 0; pointerIndex < ways_; ++pointerIndex) {
+                    if (!IsItemEvictable(set, pointerIndex)) {
+                        int valueIndex = pointerArray_[set][pointerIndex].Key;
+
+                        if (valueIndex != EMPTY_MARKER) {
+                            array[arrayIndex] = new (valueArray_[set][valueIndex].Value.Key, valueArray_[set][valueIndex].Value.Value);
+                            ++arrayIndex;
+                        }
                     }
                 }
             }
@@ -552,6 +564,7 @@ namespace ParksComputing.SetAssociativeCache {
                 if (valueIndex != EMPTY_MARKER &&
                     valueArray_[set][valueIndex].Value.Key.Equals(key)) {
                     pointerArray_[set][pointerIndex] = new KeyValuePair<int, TMeta>(valueIndex, meta);
+                    return;
                 }
             };
 

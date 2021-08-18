@@ -12,10 +12,184 @@ using ParksComputing.SetAssociativeCache;
 namespace SetAssociativeCacheSample {
     public class Program {
         static void Main(string[] args) {
-            // WebSample.Run(args);
-            PerfTest.Run(args);
+            WebSample.Run(args);
+            // PerfTest.Run(args);
             // CelebCouples.ArticlePart1Sample();
             // CelebCouples.ReadmeSample();
+        }
+        class WebSample {
+
+            readonly static HttpClient client = new HttpClient();
+            static TlruCache<string, HttpResponseMessage> responseCache;
+
+            static void Help() {
+                Console.WriteLine("Web request cache tester");
+                Console.WriteLine();
+                Console.WriteLine("get <url>                Get response from URL");
+                Console.WriteLine("timeout <seconds>        Set default timeout for new requests");
+                Console.WriteLine("update <url> <seconds>   Set timeout for cached request");
+                Console.WriteLine("dump                     List all cached requests");
+                Console.WriteLine("now                      Print the current time");
+                Console.WriteLine("quit                     Quit");
+                Console.WriteLine("help                     Print help");
+                Console.WriteLine();
+            }
+
+            public static void Run(string[] args) {
+                responseCache = new(sets: 1, ways: 3);
+                responseCache.DefaultTTU = 10; // 10 seconds is low, but it's just to make a point.
+                string line;
+
+                Help();
+                Console.Write("> ");
+
+                while (true) {
+                    line = Console.In.ReadLine();
+                    string[] tokens = line.Split(' ');
+                    int i = 0;
+
+                    while (i < tokens.Length) {
+                        switch (tokens[i].ToLower()) {
+                        case "get":
+                        case "g":
+                            ++i;
+
+                            if (i < tokens.Length) {
+                                string url = tokens[i];
+                                UriBuilder uri = new(url);
+                                GetRequest(uri.ToString()).Wait();
+                            }
+                            else {
+                                Console.WriteLine("Error: No URL specified");
+                            }
+
+                            break;
+
+                        case "update":
+                        case "u":
+                            ++i;
+
+                            if (i < tokens.Length) {
+                                string url = tokens[i];
+                                UriBuilder uri = new(url);
+                                var key = uri.ToString();
+                                ++i;
+
+                                if (i < tokens.Length) {
+                                    try {
+                                        long ttu = int.Parse(tokens[i]);
+                                        responseCache.SetTimeout(key, ttu);
+                                    }
+                                    catch (FormatException) {
+                                        Console.WriteLine($"Error: Cannot parse timeout value: {tokens[i]}");
+                                    }
+                                    catch (OverflowException) {
+                                        Console.WriteLine($"Error: Cannot parse timeout value: {tokens[i]}");
+                                    }
+                                    catch (KeyNotFoundException) {
+                                        Console.WriteLine($"Error: Cannot find key: {key}. It may have expired already.");
+                                    }
+                                }
+                                else {
+                                    Console.WriteLine("Error: ");
+                                }
+                            }
+                            else {
+                                Console.WriteLine("Error: ");
+                            }
+
+                            break;
+
+                        case "now":
+                        case "n":
+                            Console.WriteLine(DateTime.Now.ToString());
+                            break;
+
+                        case "dump":
+                        case "d":
+                            foreach (string key in responseCache.Keys) {
+                                Console.WriteLine($"URL: {key}, Expires: {responseCache.GetExpirationTime(key).ToLocalTime()}");
+                            }
+
+                            break;
+
+                        case "timeout":
+                        case "t":
+                            ++i;
+
+                            if (i < tokens.Length) {
+                                try {
+                                    long ttu = int.Parse(tokens[i]);
+                                    responseCache.DefaultTTU = ttu;
+                                }
+                                catch (Exception) {
+                                    Console.WriteLine($"Error: Cannot parse timeout value: {tokens[i]}");
+                                }
+                            }
+                            else {
+                                Console.WriteLine("Error: No timeout specified");
+                            }
+
+                            break;
+
+                        case "quit":
+                        case "exit":
+                        case "q":
+                            return;
+
+                        case "help":
+                        case "h":
+                        case "?":
+                            Help();
+                            break;
+
+                        default:
+                            break;
+                        }
+
+                        ++i;
+                    }
+
+                    Console.Write("> ");
+                }
+            }
+
+            static async Task GetRequest(string url) {
+                try {
+                    DateTime startTime = DateTime.Now;
+
+                    if (!responseCache.TryGetValue(url, out HttpResponseMessage response)) {
+                        response = await client.GetAsync(url);
+                        response.EnsureSuccessStatusCode();
+                        responseCache[url] = response;
+
+                        if (response.Headers.CacheControl != null) {
+                            var cacheControl = response.Headers.CacheControl;
+                            var seconds = cacheControl.MaxAge;
+
+                            if (seconds.HasValue) {
+                                Console.WriteLine($"max-age: {seconds}");
+                            }
+                            else {
+                                Console.WriteLine("No max-age");
+                            }
+                        }
+                    }
+
+                    string headers = response.Headers.ToString();
+                    string responseContent = await response.Content.ReadAsStringAsync();
+                    DateTime endTime = DateTime.Now;
+                    TimeSpan duration = endTime - startTime;
+
+                    Console.WriteLine(headers);
+                    Console.WriteLine(responseContent);
+                    Console.WriteLine();
+                    Console.WriteLine($"Retrieval time: {duration:c}");
+                }
+                catch (HttpRequestException e) {
+                    Console.WriteLine("Message :{0} ", e.Message);
+                }
+            }
         }
 
         public class PerfTest {
@@ -23,8 +197,8 @@ namespace SetAssociativeCacheSample {
                 InitRandomStringGen();
 
                 // LruCache<int, int> cache = new (sets: 1, ways: 500);
-                LruCache<string, string> cache = new (sets: 1, ways: 500);
-                int genCount = 127718;
+                LruCache<string, string> cache = new (sets: 1000, ways: 4);
+                int genCount = 250000;
 
                 DateTime startTime = DateTime.Now;
                 TimeSpan randGenTime = TimeSpan.Zero;
@@ -39,8 +213,8 @@ namespace SetAssociativeCacheSample {
 
                 TimeSpan duration = (DateTime.Now - startTime) - randGenTime;
 
-                Console.WriteLine($"Run time: {duration.ToString("c")}");
-                Console.WriteLine($"String gen time: {randGenTime.ToString("c")}");
+                Console.WriteLine($"Run time: {duration:c}");
+                Console.WriteLine($"String gen time: {randGenTime:c}");
             }
 
             /// <summary>
@@ -372,53 +546,4 @@ namespace SetAssociativeCacheSample {
         }
     }
 
-
-    class WebSample {
-
-        readonly static HttpClient client = new HttpClient();
-        static TlruCache<string, HttpResponseMessage> responseCache;
-
-        public static void Run(string[] args) {
-            responseCache = new (sets: 1, ways: 3);
-            responseCache.DefaultTTU = 10; // 10 seconds is low, but it's just to make a point.
-            string line;
-
-            Console.Write("URL: ");
-
-            while (!string.IsNullOrEmpty(line = Console.In.ReadLine())) {
-                string url = line.Trim();
-                UriBuilder uri = new UriBuilder(url);
-                GetRequest(uri.ToString()).Wait();
-
-                Console.WriteLine();
-                Console.Write("URL: ");
-            }
-        }
-
-        static async Task GetRequest(string url) {
-            try {
-                DateTime startTime = DateTime.Now;
-
-                if (!responseCache.TryGetValue(url, out HttpResponseMessage response)) {
-                    // HttpResponseMessage response = await client.SendAsync(new HttpRequestMessage(HttpMethod.Head, url));
-                    response = await client.GetAsync(url);
-                    response.EnsureSuccessStatusCode();
-                    responseCache[url] = response;
-                }
-
-                string headers = response.Headers.ToString();
-                string responseContent = await response.Content.ReadAsStringAsync();
-                DateTime endTime = DateTime.Now;
-                TimeSpan duration = endTime - startTime;
-
-                Console.WriteLine(headers);
-                Console.WriteLine(responseContent);
-                Console.WriteLine();
-                Console.WriteLine($"Retrieval time: {duration.ToString("c")}");
-            }
-            catch (HttpRequestException e) {
-                Console.WriteLine("Message :{0} ", e.Message);
-            }
-        }
-    }
 }

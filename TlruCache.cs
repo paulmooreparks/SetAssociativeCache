@@ -43,6 +43,11 @@ namespace ParksComputing.SetAssociativeCache {
             SetExpirationTime(key, expTime);
         }
 
+        public void SetTimeout(TKey key, TimeSpan timeSpan) {
+            DateTime expTime = DateTime.UtcNow + timeSpan;
+            SetExpirationTime(key, expTime);
+        }
+
         /// <summary>
         /// Gets the index into the pointer array for the item which should be evicted from the set.
         /// </summary>
