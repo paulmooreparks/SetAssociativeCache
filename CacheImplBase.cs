@@ -547,7 +547,8 @@ namespace ParksComputing.SetAssociativeCache {
         /// <summary>
         /// Sets the metadata for element with the specified key.
         /// </summary>
-        /// <param name="key">The key of the element to get.</param>
+        /// <param name="key">The key of the element to modify.</param>
+        /// <param name="meta">The metadata to set for the specified key.</param>
         /// <exception cref="System.ArgumentNullException"><paramref name="key"/> is null.</exception>
         /// <exception cref="System.Collections.Generic.KeyNotFoundException">The <paramref name="key"/> is not found.</exception>
         public void SetMetaData(TKey key, TMeta meta) {
@@ -581,7 +582,6 @@ namespace ParksComputing.SetAssociativeCache {
         /// <param name="set">The set in which the element exists.</param>
         /// <param name="pointerIndex">The index into the pointer set at which the element's value index is kept.</param>
         /// <param name="valueIndex">The index into the item set at which the element is stored.</param>
-        /// <exception cref="System.ArgumentNullException"><paramref name="key"/> is null.</exception>
         protected virtual bool FilterGetValue(TKey key, TValue value, int set, int pointerIndex, int valueIndex) {
             return false;
         }
@@ -594,6 +594,7 @@ namespace ParksComputing.SetAssociativeCache {
         /// </summary>
         /// <param name="key">The object to use as the key of the element to add.</param>
         /// <param name="value">The object to use as the value of the element to add.</param>
+        /// <param name="meta">Additional data associated with the object.</param>
         /// <param name="OnKeyExists">The delegate to call when the <paramref name="key"/> 
         /// is already present.</param>
         /// <remarks>
@@ -604,6 +605,14 @@ namespace ParksComputing.SetAssociativeCache {
         /// <exception cref="System.ArgumentNullException">Either <paramref name="key"/> or 
         /// <paramref name="OnKeyExists"/> is null.</exception>
         protected void AddOrUpdate(TKey key, TValue value, TMeta meta, Action<TKey, TValue, TMeta, int, int, int> OnKeyExists) {
+            if (key == null) {
+                throw new ArgumentNullException(nameof(key));
+            }
+
+            if (OnKeyExists == null) {
+                throw new ArgumentNullException(nameof(OnKeyExists));
+            }
+
             /* Get the number of the set that would contain the new key. */
             int set = FindSet(key);
             int pointerIndex;
@@ -626,6 +635,18 @@ namespace ParksComputing.SetAssociativeCache {
             PromoteKey(set, pointerIndex);
         }
 
+        /// <summary>
+        /// Try to add a cache item at the specified set and pointer index.
+        /// </summary>
+        /// <param name="key">The object to use as the key of the element to add.</param>
+        /// <param name="value">The object to use as the value of the element to add.</param>
+        /// <param name="meta">Additional data associated with the object.</param>
+        /// <param name="set">The set in which to add the element.</param>
+        /// <param name="pointerIndex">The index into the pointer set at which to add the element's value index.</param>
+        /// <param name="valueIndex">The index into the item set at which the element is stored.</param>
+        /// <param name="OnKeyExists">The delegate to call when the <paramref name="key"/> 
+        /// is already present.</param>
+        /// <returns><c>true</c> if cache item added; <c>false</c> otherwise.</returns>
         protected virtual bool TryAddAtIndex(TKey key, TValue value, TMeta meta, int set, int pointerIndex, int valueIndex, Action<TKey, TValue, TMeta, int, int, int> OnKeyExists) {
             /* If the index is a sentinel value for "nothing stored here"... */
             if (valueIndex == EMPTY_MARKER) {
@@ -664,10 +685,10 @@ namespace ParksComputing.SetAssociativeCache {
         /// </summary>
         /// <param name="key">The object to use as the key of the element to add.</param>
         /// <param name="value">The object to use as the value of the element to add.</param>
+        /// <param name="meta">Additional data associated with the object.</param>
         /// <param name="set">The set in which to add the element.</param>
         /// <param name="pointerIndex">The index into the pointer set at which to add the element's value index.</param>
         /// <param name="valueIndex">The index into the item set at which the element is stored.</param>
-        /// <exception cref="System.ArgumentNullException"><paramref name="key"/> is null.</exception>
         protected virtual void AddItem(TKey key, TValue value, TMeta meta, int set, int pointerIndex, int valueIndex) {
             pointerArray_[set][pointerIndex] = new KeyValuePair<int, TMeta>(valueIndex, meta);
             valueArray_[set][valueIndex] = new KeyValuePair<TKey, TValue>(key, value);
@@ -702,7 +723,6 @@ namespace ParksComputing.SetAssociativeCache {
         /// <param name="set">The set in which to add the element.</param>
         /// <param name="pointerIndex">The index into the pointer set at which to add the element's value index.</param>
         /// <param name="valueIndex">The index into the item set at which the element is stored.</param>
-        /// <exception cref="System.ArgumentNullException"><paramref name="key"/> is null.</exception>
         protected virtual void ReplaceItem(TKey key, TValue value, TMeta meta, int set, int pointerIndex, int valueIndex) {
             --count_;
             AddItem(key, value, meta, set, pointerIndex, valueIndex);
@@ -712,7 +732,6 @@ namespace ParksComputing.SetAssociativeCache {
         /// Given a <paramref name="key"/>, find the set into which the key should be placed.
         /// </summary>
         /// <param name="key">The key used to find the appropriate set.</param>
-        /// <exception cref="System.ArgumentNullException"><paramref name="key"/> is null.</exception>
         /// <returns>The set in which the <paramref name="key"/> should be kept.</returns>
         protected int FindSet(TKey key) {
             ulong keyHash = key.GetHashValue();
