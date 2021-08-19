@@ -26,11 +26,10 @@ namespace ParksComputing.SetAssociativeCache {
         /* There are two arrays of key/value pairs which are used to track and store the actual cache items. */
 
         /* pointerArray_ stores the indices of the actual cache items stored in the value array. Each 
-        item in the array is a key/value pair of two integers. The first integer is an index into 
-        the value array. The second index is interpreted by the derived class that implements a 
+        item in the array is a key/value pair of two values. The first integer is an index into 
+        the value array. The second value is interpreted by the derived class that implements a 
         specific eviction policy. This array is sorted/rearranged/whatever according to the needs 
-        of the cache policy, since it's faster to move integer pairs around, and they're close 
-        together in the CPU cache. */
+        of the cache policy, while the value array is left as-is once values are placed into it. */
         protected KeyValuePair<int, TMeta>[][] pointerArray_;
 
         /* valueArray_ stores the key/value pairs of the actual cache items. Once an item is placed 
@@ -40,7 +39,7 @@ namespace ParksComputing.SetAssociativeCache {
         protected KeyValuePair<TKey, TValue>?[][] valueArray_;
 
         /* This value is used as a sentinel to mark empty slots in the pointer array. */
-        protected const int EMPTY_MARKER = int.MinValue;
+        protected const int EMPTY_MARKER = int.MaxValue;
 
         /// <summary>
         /// Create a new <c>CacheImplBase</c> instance.
@@ -85,10 +84,14 @@ namespace ParksComputing.SetAssociativeCache {
                     return value;
                 }
 
-                throw new KeyNotFoundException(string.Format("Key '{0}' not found in cache", key));
+                throw new KeyNotFoundException(string.Format($"Key '{key}' not found in cache"));
             }
 
             set {
+                if (key == null) {
+                    throw new ArgumentNullException(nameof(key));
+                }
+
                 TMeta meta = default(TMeta);
                 AddOrUpdate(key, value, meta, (key, value, meta, set, pointerIndex, valueIndex) => {
                     ReplaceItem(key, value, meta, set, pointerIndex, valueIndex);
@@ -153,6 +156,10 @@ namespace ParksComputing.SetAssociativeCache {
         /// already exists in the cache.</exception>
         /// <exception cref="System.ArgumentNullException"><paramref name="key"/> is null.</exception>
         public virtual void Add(TKey key, TValue value, TMeta meta) {
+            if (key == null) {
+                throw new ArgumentNullException(nameof(key));
+            }
+
             AddOrUpdate(key, value, meta, (key, value, meta, set, pointerIndex, valueIndex) => {
                 throw new ArgumentException($"Item with key already exists. Key: {key}", nameof(key));
             });
@@ -541,7 +548,7 @@ namespace ParksComputing.SetAssociativeCache {
                 }
             };
 
-            throw new KeyNotFoundException(string.Format("Key '{0}' not found in cache", key));
+            throw new KeyNotFoundException(string.Format($"Key '{key}' not found in cache"));
         }
 
         /// <summary>
@@ -569,7 +576,7 @@ namespace ParksComputing.SetAssociativeCache {
                 }
             };
 
-            throw new KeyNotFoundException(string.Format("Key '{0}' not found in cache", key));
+            throw new KeyNotFoundException(string.Format($"Key '{key}' not found in cache"));
         }
 
         /// <summary>
@@ -602,17 +609,7 @@ namespace ParksComputing.SetAssociativeCache {
         /// from the index method (this[key]), we want to update an existing key. If called from 
         /// the Add method, we want to throw an <c>ArgumentException</c>.
         /// </remarks>
-        /// <exception cref="System.ArgumentNullException">Either <paramref name="key"/> or 
-        /// <paramref name="OnKeyExists"/> is null.</exception>
         protected void AddOrUpdate(TKey key, TValue value, TMeta meta, Action<TKey, TValue, TMeta, int, int, int> OnKeyExists) {
-            if (key == null) {
-                throw new ArgumentNullException(nameof(key));
-            }
-
-            if (OnKeyExists == null) {
-                throw new ArgumentNullException(nameof(OnKeyExists));
-            }
-
             /* Get the number of the set that would contain the new key. */
             int set = FindSet(key);
             int pointerIndex;

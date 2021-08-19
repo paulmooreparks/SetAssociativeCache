@@ -27,10 +27,13 @@ namespace SetAssociativeCacheSample {
                 Console.WriteLine("more complicated than this. This is just a simple example of how");
                 Console.WriteLine("to use the TLRU cache implementation.");
                 Console.WriteLine();
+                Console.WriteLine("Use the following commands to interact with the cache. You may");
+                Console.WriteLine("type the full command or just the initial letter.");
+                Console.WriteLine();
                 Console.WriteLine("get <url>                Get response from URL");
-                Console.WriteLine("timeout <seconds>        Set default timeout for new responses");
+                Console.WriteLine("timeout [seconds]        Report or set default timeout for new responses");
                 Console.WriteLine("update <url> <seconds>   Set timeout for cached response");
-                Console.WriteLine("dump                     List all cached responses");
+                Console.WriteLine("list                     List all cached responses");
                 Console.WriteLine("now                      Print the current time");
                 Console.WriteLine("quit                     Quit");
                 Console.WriteLine("help                     Print help");
@@ -39,15 +42,13 @@ namespace SetAssociativeCacheSample {
 
             public static void Run(string[] args) {
                 responseCache = new(sets: 1, ways: 3);
-                responseCache.DefaultTTU = 10; // 10 seconds is low, but it's just to make a point.
+                responseCache.DefaultTTU = 30; // 30 seconds is low, but it's just to make a point.
                 string line;
 
                 Help();
-                Console.Write("> ");
+                string[] tokens = { "t" };
 
                 while (true) {
-                    line = Console.In.ReadLine();
-                    string[] tokens = line.Split(' ');
                     int i = 0;
 
                     while (i < tokens.Length) {
@@ -107,8 +108,8 @@ namespace SetAssociativeCacheSample {
                             Console.WriteLine(DateTime.Now.ToString());
                             break;
 
-                        case "dump":
-                        case "d":
+                        case "list":
+                        case "l":
                             foreach (string key in responseCache.Keys) {
                                 Console.WriteLine($"URL: {key}, Expires: {responseCache.GetExpirationTime(key).ToLocalTime()}");
                             }
@@ -128,10 +129,8 @@ namespace SetAssociativeCacheSample {
                                     Console.WriteLine($"Error: Cannot parse timeout value: {tokens[i]}");
                                 }
                             }
-                            else {
-                                Console.WriteLine("Error: No timeout specified");
-                            }
 
+                            Console.WriteLine($"Timeout: {responseCache.DefaultTTU} seconds");
                             break;
 
                         case "quit":
@@ -146,6 +145,7 @@ namespace SetAssociativeCacheSample {
                             break;
 
                         default:
+                            Console.WriteLine("Error: Unknown command");
                             break;
                         }
 
@@ -153,6 +153,8 @@ namespace SetAssociativeCacheSample {
                     }
 
                     Console.Write("> ");
+                    line = Console.In.ReadLine();
+                    tokens = line.Split(' ');
                 }
             }
 
