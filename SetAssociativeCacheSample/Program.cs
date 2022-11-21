@@ -30,7 +30,7 @@ namespace SetAssociativeCacheSample {
                 Console.WriteLine("Use the following commands to interact with the cache. You may");
                 Console.WriteLine("type the full command or just the initial letter.");
                 Console.WriteLine();
-                Console.WriteLine("get <url>                Get response from URL");
+                Console.WriteLine("get <url>                Get response from URL or from cache");
                 Console.WriteLine("timeout [seconds]        Report or set default timeout for new responses");
                 Console.WriteLine("update <url> <seconds>   Set timeout for cached response");
                 Console.WriteLine("list                     List all cached responses");
@@ -46,11 +46,19 @@ namespace SetAssociativeCacheSample {
                 string line;
 
                 Help();
+
+                // Insert initial tokens into the command processor.
                 string[] tokens = { "t" };
 
                 while (true) {
                     int i = 0;
 
+                    /* The structure of this while loop has a nifty side-effect. It is possible to 
+                    string together commands on a single line, separated only by a space. E.g.,
+
+                    > get parkscomputing.com get microsoft.com list now update parkscomputing.com 10 list
+
+                    */
                     while (i < tokens.Length) {
                         switch (tokens[i].ToLower()) {
                         case "get":
@@ -161,8 +169,9 @@ namespace SetAssociativeCacheSample {
             static async Task GetRequest(string url) {
                 try {
                     DateTime startTime = DateTime.Now;
+                    bool isCached = responseCache.TryGetValue(url, out HttpResponseMessage response);
 
-                    if (!responseCache.TryGetValue(url, out HttpResponseMessage response)) {
+                    if (!isCached) {
                         response = await client.GetAsync(url);
                         response.EnsureSuccessStatusCode();
                         responseCache[url] = response;
@@ -188,6 +197,7 @@ namespace SetAssociativeCacheSample {
                     Console.WriteLine(headers);
                     Console.WriteLine(responseContent);
                     Console.WriteLine();
+                    Console.WriteLine("Response retrieved from {0}", isCached ? "cache" : "host");
                     Console.WriteLine($"Retrieval time: {duration:c}");
                 }
                 catch (HttpRequestException e) {
@@ -256,9 +266,9 @@ namespace SetAssociativeCacheSample {
             public static void LfuHamAndEggs() {
                 string value;
 
-                var cache = new LfuCache<string, string>(1, 2);
-
-                cache["Eggs"] = "Ham";
+                var cache = new LfuCache<string, string>(1, 2) {
+                    ["Eggs"] = "Ham"
+                };
                 Assert.IsTrue(cache.Count == 1);
 
                 cache["Sam"] = "Iam";

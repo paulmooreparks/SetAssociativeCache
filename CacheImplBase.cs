@@ -15,7 +15,7 @@ namespace ParksComputing.SetAssociativeCache {
     public abstract class CacheImplBase<TKey, TValue, TMeta> : ISetAssociativeCache<TKey, TValue>, IReadOnlyDictionary<TKey, TValue> {
 
         /* By using fields instead of properties, I've found that I can eliminate function 
-        alls from the release version of the JITted assembly code, at least on Intel/AMD x64. 
+        calls from the release version of the JITted assembly code, at least on Intel/AMD x64. 
         That actually surprises me. The properties still exist, though, in case external clients 
         need to know the values for some reason. */
         protected readonly int sets_; // Number of sets in the cache
@@ -88,7 +88,7 @@ namespace ParksComputing.SetAssociativeCache {
             }
 
             set {
-                if (key == null) {
+                if (key is null) {
                     throw new ArgumentNullException(nameof(key));
                 }
 
@@ -156,7 +156,7 @@ namespace ParksComputing.SetAssociativeCache {
         /// already exists in the cache.</exception>
         /// <exception cref="System.ArgumentNullException"><paramref name="key"/> is null.</exception>
         public virtual void Add(TKey key, TValue value, TMeta meta) {
-            if (key == null) {
+            if (key is null) {
                 throw new ArgumentNullException(nameof(key));
             }
 
@@ -171,7 +171,7 @@ namespace ParksComputing.SetAssociativeCache {
         /// <param name="item">The key/value pair to add to the cache.</param>
         /// <exception cref="System.ArgumentException">Key field in <paramref name="item"/> is null.</exception>
         public void Add(KeyValuePair<TKey, TValue> item) {
-            if (item.Key == null) {
+            if (item.Key is null) {
                 throw new ArgumentException($"Key field in item is null", nameof(item));
             }
 
@@ -189,7 +189,7 @@ namespace ParksComputing.SetAssociativeCache {
         /// </returns>
         /// <exception cref="System.ArgumentNullException"><paramref name="key"/> is null.</exception>
         public virtual bool ContainsKey(TKey key) {
-            if (key == null) {
+            if (key is null) {
                 throw new ArgumentNullException(nameof(key));
             }
 
@@ -218,7 +218,7 @@ namespace ParksComputing.SetAssociativeCache {
         /// <returns>true if <paramref name="item"/> is found in the cache; otherwise, false.</returns>
         /// <exception cref="System.ArgumentException">Key field in <paramref name="item"/> is null.</exception>
         public virtual bool Contains(KeyValuePair<TKey, TValue> item) {
-            if (item.Key == null) {
+            if (item.Key is null) {
                 throw new ArgumentException($"Key field in item is null", nameof(item));
             }
 
@@ -255,7 +255,7 @@ namespace ParksComputing.SetAssociativeCache {
         /// </returns>
         /// <exception cref="System.ArgumentNullException"><paramref name="key"/> is null.</exception>
         public virtual bool TryGetValue(TKey key, [MaybeNullWhen(false)] out TValue value) {
-            if (key == null) {
+            if (key is null) {
                 throw new ArgumentNullException(nameof(key));
             }
 
@@ -294,7 +294,7 @@ namespace ParksComputing.SetAssociativeCache {
         /// <returns><c>true</c> if a key would be evicted; <c>false</c> otherwise.</returns>
         /// <exception cref="System.ArgumentNullException">key is null.</exception>
         public bool TryGetEvictKey(TKey key, out TKey evictKey) {
-            if (key == null) {
+            if (key is null) {
                 throw new ArgumentNullException(nameof(key));
             }
 
@@ -347,7 +347,7 @@ namespace ParksComputing.SetAssociativeCache {
         /// <paramref name="key"/> was not found in the cache.
         /// </returns>
         public virtual bool Remove(TKey key) {
-            if (key == null) {
+            if (key is null) {
                 throw new ArgumentNullException(nameof(key));
             }
 
@@ -376,7 +376,7 @@ namespace ParksComputing.SetAssociativeCache {
         /// </returns>
         /// <exception cref="System.ArgumentException">Key field in <paramref name="item"/> is null.</exception>
         public virtual bool Remove(KeyValuePair<TKey, TValue> item) {
-            if (item.Key == null) {
+            if (item.Key is null) {
                 throw new ArgumentException($"Key field in item is null", nameof(item));
             }
 
@@ -476,7 +476,7 @@ namespace ParksComputing.SetAssociativeCache {
         /// available space from arrayIndex to the end of the destination array.
         /// </exception>
         public virtual void CopyTo(KeyValuePair<TKey, TValue>[] array, int arrayIndex) {
-            if (array == null) {
+            if (array is null) {
                 throw new ArgumentNullException(nameof(array));
             }
 
@@ -532,7 +532,7 @@ namespace ParksComputing.SetAssociativeCache {
         /// <exception cref="System.ArgumentNullException"><paramref name="key"/> is null.</exception>
         /// <exception cref="System.Collections.Generic.KeyNotFoundException">The <paramref name="key"/> is not found.</exception>
         public TMeta GetMetaData(TKey key) {
-            if (key == null) {
+            if (key is null) {
                 throw new ArgumentNullException(nameof(key));
             }
 
@@ -559,7 +559,7 @@ namespace ParksComputing.SetAssociativeCache {
         /// <exception cref="System.ArgumentNullException"><paramref name="key"/> is null.</exception>
         /// <exception cref="System.Collections.Generic.KeyNotFoundException">The <paramref name="key"/> is not found.</exception>
         public void SetMetaData(TKey key, TMeta meta) {
-            if (key == null) {
+            if (key is null) {
                 throw new ArgumentNullException(nameof(key));
             }
 
