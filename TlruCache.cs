@@ -126,11 +126,9 @@ namespace ParksComputing.SetAssociativeCache {
 
         /// <summary>
         /// Determine if the item in the given <paramref name="set"/> at the given 
-        /// <paramref name="pointerIndex"/> can be replaced by an item with the 
-        /// given <paramref name="key"/>, if that item is added to the set.
+        /// <paramref name="pointerIndex"/> can be evicted.
         /// </summary>
-        /// <param name="key">The key of the item to add.</param>
-        /// <param name="set">The set in which the <paramref name="key"/> would be added.</param>
+        /// <param name="set">The set in which the item to test exists.</param>
         /// <param name="pointerIndex">The index into the <paramref name="set"/> array for the 
         /// item being tested.</param>
         /// <returns><c>true</c> if the item at <paramref name="pointerIndex"/> in <paramref name="set"/> 
